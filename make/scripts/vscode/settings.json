@@ -1,0 +1,5 @@
+{
+    "cortex-debug.armToolchainPath": "&&CORTEXDEBUGTOOLCHAIN&&/bin",
+    "cortex-debug.openocdPath": "&&CORTEXDEBUGOPENOCD&&/bin/openocd",
+    "cortex-debug.JLinkGDBServerPath": "",
+}
