@@ -32,6 +32,7 @@ This version of the Cypress PSoC 6 Hardware Abstraction Layer was validated for 
 ### More information
 Use the following links for more information, as needed:
 * [Cypress Semiconductor](http://www.cypress.com)
+* [Cypress Semiconductor GitHub](https://github.com/cypresssemiconductorco)
 * [ModusToolbox](https://www.cypress.com/products/modustoolbox-software-environment)
 
 ---

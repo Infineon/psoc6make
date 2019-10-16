@@ -15,6 +15,7 @@ To list the build options, run the "help" target by typing "make help" in CLI. F
 
 ## More information
 * [Cypress Semiconductor](http://www.cypress.com)
+* [Cypress Semiconductor GitHub](https://github.com/cypresssemiconductorco)
 * [ModusToolbox](https://www.cypress.com/products/modustoolbox-software-environment)
 
 ---
