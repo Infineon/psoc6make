@@ -609,7 +609,7 @@ else
 $(CY_BUILD_TARGET): $(CY_BUILD_ALL_OBJ_FILES) $(CY_BUILD_ALL_LIB_FILES) $(LINKER_SCRIPT) $(CY_SHAREDLIB_TIMESTAMP)
 ifneq ($(SEARCH_LIBS_AND_INCLUDES),)
 	@libArray=($(CY_SHAREDLIB_LIBS_EXPORT_LIST)); \
-	for libFile in "$${artifactArray[@]}"; do \
+	for libFile in "$${libArray[@]}"; do \
 		if [ "$$libFile" -nt "$(CY_BUILD_TARGET)" ]; then \
 			relink=true; \
 		fi; \
@@ -620,6 +620,9 @@ ifneq ($(SEARCH_LIBS_AND_INCLUDES),)
 			relink=true; \
 		fi; \
 	done; \
+	if [[ "$?" == *".$(CY_TOOLCHAIN_SUFFIX_O)"* ]] || [[ "$?" == *".$(CY_TOOLCHAIN_SUFFIX_A)"* ]]; then \
+		relink=true; \
+	fi; \
 	if [ $$relink ]; then \
 		echo "    Linking output file $(notdir $@)"; \
 		$(CY_BUILD_LINK); \

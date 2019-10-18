@@ -241,24 +241,16 @@ ifneq (,$(findstring CYB0,$(DEVICE)))
 CY_ECLIPSE_TEMPLATES_WILDCARD=*KitProg3*
 endif
 
-CY_JSON_INCLUDES_RAW=$(CY_RECIPE_INCLUDES)
-CY_JSON_INCLUDES_LIST=$(subst -I,,$(CY_JSON_INCLUDES_RAW))
-CY_JSON_INCLUDES=$(foreach onedef,$(CY_JSON_INCLUDES_LIST),\"$(onedef)\",)
-
-CY_JSON_DEFINES_RAW=$(CY_RECIPE_DEFINES)
-CY_JSON_DEFINES_LIST=$(subst -D,,$(CY_JSON_DEFINES_RAW))
-CY_JSON_DEFINES=$(foreach onedef,$(CY_JSON_DEFINES_LIST),\"$(onedef)\",)
-
-CY_VSCODE_ARGS="s|&&MODUSPATH&&|$(CY_INTERNAL_TOOLS)|g;"\
-				"s|&&RELEASETARGET&&|build/$(TARGET)/Release/$(APPNAME).elf|g;"\
+CY_VSCODE_ARGS="s|&&RELEASETARGET&&|build/$(TARGET)/Release/$(APPNAME).elf|g;"\
 				"s|&&DEBUGTARGET&&|build/$(TARGET)/Debug/$(APPNAME).elf|g;"\
 				"s|&&PSOCFAMILY&&|$(CY_PSOC_ARCH)|g;"\
-				"s|&&MODUSSHELL&&|$(CY_INTERNAL_TOOLS)/modus-shell/|g;"\
-				"s|&&JSONINCLUDELIST&&|$(CY_JSON_INCLUDES)|g;"\
-				"s|&&JSONDEFINELIST&&|$(CY_JSON_DEFINES)|g;"\
+				"s|&&MODUSSHELL&&|$(CY_MODUS_SHELL_DIR)|g;"\
 				"s|&&OPENOCDFILE&&|$(CY_OPENOCD_DEVICE_CFG)|g;"\
-				"s|&&CORTEXDEBUGTOOLCHAIN&&|$(CY_COMPILER_DIR)|g;"\
-				"s|&&CORTEXDEBUGOPENOCD&&|$(CY_OPENOCD_DIR)|g;"\
+				"s|&&SVDFILENAME&&|$(CY_OPENOCD_SVD_PATH)|g;"\
+				"s|&&MODUSTOOLCHAIN&&|$(CY_COMPILER_DIR)|g;"\
+				"s|&&MODUSTOOLCHAINVERSION&&|$(notdir $(CY_COMPILER_DIR))|g;"\
+				"s|&&MODUSOPENCOD&&|$(CY_OPENOCD_DIR)|g;"\
+				"s|&&MODUSLIBMANAGER&&|$(CY_LIBRARY_MANAGER_DIR)|g;"\
 
 CY_ECLIPSE_ARGS="s|&&CY_OPENOCD_CFG&&|$(CY_OPENOCD_DEVICE_CFG)|;"\
 				"s|&&CY_OPENOCD_CHIP&&|$(CY_OPENOCD_CHIP_NAME)|;"\
@@ -297,7 +289,7 @@ CY_SUPPORTED_TOOL_TYPES+=\
 	dfuh-tool
 
 # PSoC 6 smartio also uses the .modus extension
-modus_DEFAULT_TYPE+=smartio-configurator
+modus_DEFAULT_TYPE+=device-configurator smartio-configurator
 
 # PSoC 6 capsense-tuner shares its existence with capsense-configurator
 CY_OPEN_NEWCFG_XML_TYPES+=capsense-tuner

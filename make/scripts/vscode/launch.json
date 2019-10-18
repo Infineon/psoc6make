@@ -10,7 +10,7 @@
             "servertype": "openocd",
             "searchDir": [
                 "${workspaceRoot}",
-                "&&MODUSPATH&&/openocd/scripts/"
+                "&&MODUSOPENCOD&&/scripts/"
             ],
             "configFiles": [
                 "openocd.tcl"
@@ -63,7 +63,7 @@
             "servertype": "openocd",
             "searchDir": [
                 "${workspaceRoot}",
-                "&&MODUSPATH&&/openocd/scripts/"
+                "&&MODUSOPENCOD&&/scripts/"
             ],
             "openOCDPreConfigLaunchCommands": [
                 "set ENABLE_ACQUIRE 0"
@@ -99,7 +99,7 @@
             "servertype": "openocd",
             "searchDir": [
                 "${workspaceRoot}",
-                "&&MODUSPATH&&/openocd/scripts/"
+                "&&MODUSOPENCOD&&/scripts/"
             ],
             "configFiles": [
                 "openocd.tcl"
@@ -120,7 +120,7 @@
             "servertype": "openocd",
             "searchDir": [
                 "${workspaceRoot}",
-                "&&MODUSPATH&&/openocd/scripts/"
+                "&&MODUSOPENCOD&&/scripts/"
             ],
             "configFiles": [
                 "openocd.tcl"

@@ -207,6 +207,7 @@ CY_MACRO_UC=$(subst a,A,$(subst b,B,$(subst c,C,$(subst d,D,$(subst e,E,$(subst 
 
 CY_VSCODE_OUT_PATH=$(CY_INTERNAL_APP_PATH)/.vscode
 CY_VSCODE_OUT_TEMPLATE_PATH=$(CY_VSCODE_OUT_PATH)/cytemplates
+CY_VSCODE_BACKUP_PATH=$(CY_VSCODE_OUT_PATH)/backup
 CY_VSCODE_TEMPLATE_PATH=$(CY_INTERNAL_BASELIB_PATH)/make/scripts/vscode
 CY_VSCODE_TEMPFILE=$(CY_CONFIG_DIR)/vscode_launch.temp
 
@@ -219,26 +220,40 @@ ifeq ($(CY_IDE_PRJNAME),)
 CY_IDE_PRJNAME=$(APPNAME)
 endif
 
-CY_HELP_vscode=WARNING: The vscode target is preliminary...
 vscode:
 ifeq ($(LIBNAME),)
 	@mkdir -p $(CY_CONFIG_DIR);\
 	mkdir -p $(CY_VSCODE_OUT_TEMPLATE_PATH);\
+	mkdir -p $(CY_VSCODE_BACKUP_PATH);\
 	echo $(CY_VSCODE_ARGS) > $(CY_VSCODE_TEMPFILE);\
+	echo "s|&&JSONINCLUDELIST&&|$(foreach onedef,$(subst -I,,$(CY_RECIPE_INCLUDES)),\"$(onedef)\",)|" >> $(CY_VSCODE_TEMPFILE);\
+	echo "s|&&JSONDEFINELIST&&|$(foreach onedef,$(subst -D,,$(CY_RECIPE_DEFINES)),\"$(onedef)\",)|" >> $(CY_VSCODE_TEMPFILE);\
 	for json in $(CY_VSCODE_TEMPLATE_PATH)/*; do\
 		jsonFile="$${json##*/}";\
+		if [[ $$jsonFile == *"c_cpp_properties"* ]] && [[ $$jsonFile != *"c_cpp_properties_$(TOOLCHAIN).json" ]]; then\
+			continue;\
+		fi;\
 		sed -f $(CY_VSCODE_TEMPFILE) $(CY_VSCODE_TEMPLATE_PATH)/$$jsonFile > $(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile;\
 		jsonFiles="$$jsonFiles $$jsonFile";\
-		if [ ! -f $(CY_VSCODE_OUT_PATH)/$$jsonFile ]; then\
+		if [ -f $(CY_VSCODE_OUT_PATH)/$$jsonFile ] && [[ $$jsonFile == *"settings.json" ]]; then\
+			echo "Modifying existing settings.json file";\
+			mv $(CY_VSCODE_OUT_PATH)/$$jsonFile $(CY_VSCODE_BACKUP_PATH)/$$jsonFile;\
+			sed \
+				-e /cortex-debug\\.armToolchainPath/s%:.*%:\ \"$(CY_COMPILER_DIR)/bin\",% \
+				-e /cortex-debug\\.openocdPath/s%:.*%:\ \"$(CY_OPENOCD_DIR)/bin/openocd\",% \
+				$(CY_VSCODE_BACKUP_PATH)/$$jsonFile > $(CY_VSCODE_OUT_PATH)/$$jsonFile;\
+		else\
 			cp $(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile $(CY_VSCODE_OUT_PATH)/$$jsonFile;\
 		fi;\
 	done;\
+	mv $(CY_VSCODE_OUT_PATH)/c_cpp_properties_$(TOOLCHAIN).json $(CY_VSCODE_OUT_PATH)/c_cpp_properties.json;\
 	mv $(CY_VSCODE_OUT_PATH)/openocd.tcl $(CY_INTERNAL_APP_PATH)/openocd.tcl;\
 	rm $(CY_VSCODE_TEMPFILE);\
+	rm -rf $(CY_VSCODE_OUT_TEMPLATE_PATH);\
 	echo;\
-	echo Generated Visual Studio Code files: $$jsonFiles
-	@echo;\
-	echo $(CY_HELP_vscode)
+	echo Generated Visual Studio Code files: $$jsonFiles;\
+	echo;\
+	echo WARNING: The vscode target is preliminary...
 else
 	@echo 
 endif
