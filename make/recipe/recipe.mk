@@ -33,8 +33,14 @@ endif
 # linker script construction
 #
 ifeq ($(LINKER_SCRIPT),)
+LINKER_SCRIPT=$(CY_TARGET_DIR)/COMPONENT_$(CORE)/TOOLCHAIN_$(TOOLCHAIN)/$(CY_LINKER_SCRIPT_NAME)_$(CY_LINKERSCRIPT_SUFFIX).$(CY_TOOLCHAIN_SUFFIX_LS)
+
+# Old path to linker script
+ifeq ($(shell if [ -f $(LINKER_SCRIPT) ]; then echo 1; else echo 0; fi;),0)
 LINKER_SCRIPT=$(CY_TARGET_DIR)/linker/TOOLCHAIN_$(TOOLCHAIN)/$(CY_LINKER_SCRIPT_NAME)_$(CY_LINKERSCRIPT_SUFFIX).$(CY_TOOLCHAIN_SUFFIX_LS)
 endif
+endif
+
 
 ifeq ($(shell if [ -f $(LINKER_SCRIPT) ]; then echo 1; else echo 0; fi;),0)
 $(error The specified linker script could not be found at $(LINKER_SCRIPT))

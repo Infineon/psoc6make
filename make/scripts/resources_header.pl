@@ -44,7 +44,7 @@ print "\n";
 print "#pragma once\n";
 print "\n";
 print "#include <stdint.h>\n";
-print "#include \"cy_abs_resource.h\"\n";
+print "#include \"cyabs_resource.h\"\n";
 print "\n";
 print "#ifdef __cplusplus\n";
 print "extern \"C\" {\n";

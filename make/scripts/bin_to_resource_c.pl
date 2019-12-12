@@ -52,7 +52,7 @@ close INFILE;
 $file_cont = join('',@file_cont_array);
 
 
-print "#include \"cy_abs_resource.h\"\n";
+print "#include \"cyabs_resource.h\"\n";
 print "\n";
 $name = $file;
 $name=~s/^.+\/(.*?)/$1/;

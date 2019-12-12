@@ -85,69 +85,34 @@ convert_resource_name() {
 processResources() {
     local TEXT_FILTERS=(html htm txt eml js css dat cer pem json xml py key)
     local BINARY_FILTERS=(jpg jpeg png ico gif bin flac wav clm_blob gz mp3 wmfw)
-
     local TEXT_TO_RES="$RECIPE_DIR/text_to_resource_c.pl"
     local BIN_TO_RES="$RECIPE_DIR/bin_to_resource_c.pl"
-
     local resourceList=($(<$1))
-    
-    # Parse through each element in the .cyrsc file
-    for ((i = 0; i < ${#resourceList[@]}; i++)); do
 
-        # Evaluate the file
-        local resourceFile="${resourceList[$i]}"
+    # Parse through each element in the .cyrsc file
+    for resourceFile in "${resourceList[@]}"; do
         local filename="${resourceFile##*/}"
         local extension="${filename##*.}"
 
-        # only process the file if it exists
         if [ -f "$resourceFile" ]; then
-
             local resourceName=$(convert_resource_name "$resourceFile")
             local outputFile="$TARGET_DIR/$(convert_resource_name $filename).c"
-
-            SOURCE_ARRAY+=("$TARGET_DIR/$(convert_resource_name $filename).c")
-
-            local script
-            local isText=$(array_contains $extension "${TEXT_FILTERS[@]}")
-            if [ "1" == "$isText" ]; then
-                script=$TEXT_TO_RES
+            SOURCE_ARRAY+=("$outputFile")
+            
+            if [ "$resourceFile" -nt "$outputFile" ]; then
+                if [ "1" == "$(array_contains $extension "${TEXT_FILTERS[@]}")" ]; then
+                    local script=$TEXT_TO_RES
+                elif [ "1" == "$(array_contains $extension "${BINARY_FILTERS[@]}")" ]; then
+                    local script=$BIN_TO_RES
+                else
+                    error  "Unsupported resource type $resourceFile with extension $extension"
+                fi
+                echo "Generating file $outputFile"
+                perl "$script" "$RESOURCE_TYPE" "$resourceName" "$resourceFile" > "$outputFile"
             fi
-
-            local isBinary=$(array_contains $extension "${BINARY_FILTERS[@]}")
-            if [ "1" == "$isBinary" ]; then
-                script=$BIN_TO_RES
-            fi
-
-            local outputFileTmp="$TARGET_DIR/$(convert_resource_name $filename).c"
-            perl "$script" "$RESOURCE_TYPE" "$resourceName" "$resourceFile" > "$outputFileTmp"
         else
             error  "Listed resource $resourceFile does not exist"
         fi
-    done
-}
-
-#
-# Remove stale files from previous run
-#
-cleanStale() {
-    local staleList=($(find $TARGET_DIR -name "*.c"))
-    local resourceList=($(<$1))
-    local fileFound=0
-
-    for ((j = 0; j < ${#staleList[@]}; j++)); do
-        for ((i = 0; i < ${#resourceList[@]}; i++)); do
-            local file="${resourceList[$i]}"
-            local filename="${file##*/}"
-            local outputFile="$TARGET_DIR/$(convert_resource_name $filename).c"
-
-            if [[  $(basename $outputFile) ==  $(basename "${staleList[$j]}") ]]; then
-                fileFound=1
-            fi
-        done
-        if [[ $fileFound == 0 ]]; then
-            rm -rf "${staleList[$j]}"
-        fi
-        fileFound=0
     done
 }
 
@@ -159,11 +124,6 @@ generateResourceHeader() {
 }
 
 #######################################################################################################################
-
-#
-# Clean files from previous run that aren't in the current list
-#
-cleanStale $RESOURCE_FILE
 
 #
 # Process all the resources in the cyrsc file

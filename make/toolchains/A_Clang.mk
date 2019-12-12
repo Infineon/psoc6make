@@ -147,7 +147,6 @@ CY_TOOLCHAIN_LDFLAGS=\
 	$(CY_TOOLCHAIN_LDFLAGS_CORE)\
 	$(CY_TOOLCHAIN_LD_VFP_FLAGS)\
 	-static\
-	-segalign 4\
 	-e Reset_Handler\
 	-merge_zero_fill_sections\
 	-pagezero_size 0\
