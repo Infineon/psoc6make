@@ -1,6 +1,5 @@
 ################################################################################
 # \file recipe.mk
-# \version 1.0
 #
 # \brief
 # Set up a set of defines, includes, software components, linker script, 

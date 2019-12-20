@@ -1,6 +1,5 @@
 ################################################################################
 # \file config.mk
-# \version 1.0
 #
 # \brief
 # Configurator-related routines
@@ -149,11 +148,14 @@ ifeq ($(CY_COMMENCE_BUILD),true)
 
 # Check the timestamps and re-run the configurator if it's stale
 ifneq ($(CY_CONFIG_MODUS_FILE),)
-CY_CONFIG_MODUS_STATE=$(shell if [ "$(CY_CONFIG_MODUS_FILE)" -nt "$(CY_CONFIG_MODUS_OUTPUT)/cycfg.timestamp" ]; then echo 1; else echo 0; fi)
+CY_CONFIG_MODUS_TIMESTAMP=$(CY_CONFIG_MODUS_OUTPUT)/cycfg.timestamp
+CY_CONFIG_MODUS_STATE:=$(shell if [ "$(CY_CONFIG_MODUS_FILE)" -nt "$(CY_CONFIG_MODUS_TIMESTAMP)" ]; then echo 1; else echo 0; fi)
 ifeq ($(CY_CONFIG_MODUS_STATE),1)
-$(info $(CY_INDENT)Stale device files detected. Running device configurator to regenerate files...)
+$(info $(CY_NEWLINE)Running device-configurator to update stale files...)
 ifneq ($(shell $(CY_CONFIG_MODUS_EXEC) $(CY_CONFIG_MODUS_EXEC_FLAGS) 1> /dev/null; echo $$?),0)
-    $(error Error(s) encountered while running the configurator on $(CY_CONFIG_MODUS_FILE))
+$(error Error(s) encountered while running the device-configurator on $(CY_CONFIG_MODUS_FILE))
+else
+$(info -> Generated device configuration file(s) in $(CY_CONFIG_MODUS_OUTPUT))
 endif
 endif
 endif
@@ -164,11 +166,14 @@ endif
 
 # Check the timestamps and re-run the configurator if it's stale
 ifneq ($(CY_CONFIG_CYBT_FILE),)
-CY_CONFIG_CYBT_STATE=$(shell if [ "$(CY_CONFIG_CYBT_FILE)" -nt "$(CY_CONFIG_CYBT_OUTPUT)/cycfg_bt.timestamp" ]; then echo 1; else echo 0; fi)
+CY_CONFIG_CYBT_TIMESTAMP=$(CY_CONFIG_CYBT_OUTPUT)/cycfg_bt.timestamp
+CY_CONFIG_CYBT_STATE:=$(shell if [ "$(CY_CONFIG_CYBT_FILE)" -nt "$(CY_CONFIG_CYBT_TIMESTAMP)" ]; then echo 1; else echo 0; fi)
 ifeq ($(CY_CONFIG_CYBT_STATE),1)
-$(info $(CY_INDENT)Stale BT files detected. Running BT-configurator to regenerate files...)
+$(info $(CY_NEWLINE)Running bt-configurator to update stale files...)
 ifneq ($(shell $(CY_CONFIG_CYBT_EXEC) $(CY_CONFIG_CYBT_EXEC_FLAGS) 1> /dev/null; echo $$?),0)
-    $(error Error(s) encountered while running the configurator on $(CY_CONFIG_CYBT_FILE))
+$(error Error(s) encountered while running the bt-configurator on $(CY_CONFIG_CYBT_FILE))
+else
+$(info -> Generated bt configuration file(s) in $(CY_CONFIG_CYBT_OUTPUT))
 endif
 endif
 endif
@@ -179,11 +184,14 @@ endif
 
 # Check the timestamps and re-run the configurator if it's stale
 ifneq ($(CY_CONFIG_CYUSBDEV_FILE),)
-CY_CONFIG_CYUSBDEV_STATE=$(shell if [ "$(CY_CONFIG_CYUSBDEV_FILE)" -nt "$(CY_CONFIG_CYUSBDEV_OUTPUT)/cycfg_usbdev.timestamp" ]; then echo 1; else echo 0; fi)
+CY_CONFIG_CYUSBDEV_TIMESTAMP=$(CY_CONFIG_CYUSBDEV_OUTPUT)/cycfg_usbdev.timestamp
+CY_CONFIG_CYUSBDEV_STATE:=$(shell if [ "$(CY_CONFIG_CYUSBDEV_FILE)" -nt "$(CY_CONFIG_CYUSBDEV_TIMESTAMP)" ]; then echo 1; else echo 0; fi)
 ifeq ($(CY_CONFIG_CYUSBDEV_STATE),1)
-$(info $(CY_INDENT)Stale USBDEV files detected. Running USBDEV-configurator to regenerate files...)
+$(info $(CY_NEWLINE)Running usbdev-configurator to update stale files...)
 ifneq ($(shell $(CY_CONFIG_CYUSBDEV_EXEC) $(CY_CONFIG_CYUSBDEV_EXEC_FLAGS) 1> /dev/null; echo $$?),0)
-    $(error Error(s) encountered while running the configurator on $(CY_CONFIG_CYUSBDEV_FILE))
+$(error Error(s) encountered while running the usbdev-configurator on $(CY_CONFIG_CYUSBDEV_FILE))
+else
+$(info -> Generated usbdev configuration file(s) in $(CY_CONFIG_CYUSBDEV_OUTPUT))
 endif
 endif
 endif
@@ -206,30 +214,30 @@ config:
 ifeq ($(CY_CONFIG_MODUS_FILE),)
 	$(info $(CY_NEWLINE)Could not find any device configuration files)
 	$(info Launching device-configurator for a new configuration)
-	$(CY_NOISE) $(CY_CONFIG_MODUS_GUI) $(CY_CONFIG_LIBFILE)
+	$(CY_NOISE) $(CY_CONFIG_MODUS_GUI) $(CY_CONFIG_LIBFILE) &
 else
 	$(info $(CY_NEWLINE)Launching device-configurator on $(CY_CONFIG_MODUS_FILE))
-	$(CY_NOISE) $(CY_CONFIG_MODUS_GUI) $(CY_CONFIG_LIBFILE) $(CY_CONFIG_MODUS_GUI_FLAGS) $(CY_CONFIG_MODUS_FILE)
+	$(CY_NOISE) $(CY_CONFIG_MODUS_GUI) $(CY_CONFIG_LIBFILE) $(CY_CONFIG_MODUS_GUI_FLAGS) $(CY_CONFIG_MODUS_FILE) &
 endif
 
 config_bt:
 ifeq ($(CY_CONFIG_CYBT_FILE),)
 	$(info $(CY_NEWLINE)Could not find any bt-configuration files)
 	$(info Launching bt-configurator for a new configuration)
-	$(CY_NOISE) $(CY_CONFIG_CYBT_GUI)
+	$(CY_NOISE) $(CY_CONFIG_CYBT_GUI) &
 else
 	$(info $(CY_NEWLINE)Launching bt-configurator on $(CY_CONFIG_CYBT_FILE))
-	$(CY_NOISE) $(CY_CONFIG_CYBT_GUI) $(CY_CONFIG_CYBT_GUI_FLAGS) $(CY_CONFIG_CYBT_FILE)
+	$(CY_NOISE) $(CY_CONFIG_CYBT_GUI) $(CY_CONFIG_CYBT_GUI_FLAGS) $(CY_CONFIG_CYBT_FILE) &
 endif
 
 config_usbdev:
 ifeq ($(CY_CONFIG_CYUSBDEV_FILE),)
 	$(info $(CY_NEWLINE)Could not find any usbdev-configuration files)
 	$(info Launching usbdev-configurator for a new configuration)
-	$(CY_NOISE) $(CY_CONFIG_CYUSBDEV_GUI)
+	$(CY_NOISE) $(CY_CONFIG_CYUSBDEV_GUI) &
 else
 	$(info $(CY_NEWLINE)Launching usbdev-configurator on $(CY_CONFIG_CYUSBDEV_FILE))
-	$(CY_NOISE) $(CY_CONFIG_CYUSBDEV_GUI) $(CY_CONFIG_CYUSBDEV_GUI_FLAGS) $(CY_CONFIG_CYUSBDEV_FILE)
+	$(CY_NOISE) $(CY_CONFIG_CYUSBDEV_GUI) $(CY_CONFIG_CYUSBDEV_GUI_FLAGS) $(CY_CONFIG_CYUSBDEV_FILE) &
 endif
 
 .PHONY: config config_bt config_usbdev

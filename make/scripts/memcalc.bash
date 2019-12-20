@@ -24,9 +24,9 @@ memcalc() {
     local internalFlash=0
     local internalSram=0
 
-    printf "   -------------------------------------------------- \n"
-    printf "  | %-20s |  %-10s   |  %-8s | \n" 'Section Name' 'Address' 'Size'
-    printf "   -------------------------------------------------- \n"
+    printf "   ---------------------------------------------------- \n"
+    printf "  | %-20s |  %-10s   |  %-10s | \n" 'Section Name' 'Address' 'Size'
+    printf "   ---------------------------------------------------- \n"
 
     while IFS=$' \t\n\r' read -r line; do
         local lineArray=($line)
@@ -45,7 +45,7 @@ memcalc() {
                         sectionElement=${lineArray[$idx+1]}
                     fi
                     # Look for regions with SHF_ALLOC = A
-                    if [[ ${#lineArray[idx]} -eq 8 ]] && [[ ${#lineArray[idx+1]} -eq 6 ]] && [[ ${#lineArray[idx+2]} -eq 6 ]] \
+                    if [[ ${#lineArray[idx]} -eq 8 ]] && [[ ${#lineArray[idx+1]} -eq 6 ]] && [[ ${#lineArray[idx+2]} -ge 6 ]] && [[ ${#lineArray[idx+2]} -le 7 ]]\
                        && [[ ${lineArray[$idx+4]} == *"A"* ]] ; then
                         addrElement=${lineArray[$idx]}
                         sizeElement=${lineArray[$idx+2]}
@@ -53,7 +53,7 @@ memcalc() {
                 done
                 # Only consider non-zero size sections
                 if [[ $addrElement != "00000000" ]]; then
-                    printf "  | %-20s |  0x%-10s |  %-8s | \n" $sectionElement $addrElement $((16#$sizeElement))
+                    printf "  | %-20s |  0x%-10s |  %-10s | \n" $sectionElement $addrElement $((16#$sizeElement))
                     # Use the section headers for SRAM tally
                     if [[ "0x$addrElement" -ge "$STARTSRAM" ]] && [[ "0x$addrElement" -lt "$ENDSRAM" ]]; then
                         internalSram=$((internalSram+$((16#$sizeElement))))
@@ -68,11 +68,11 @@ memcalc() {
         fi
     done < "$READELFFILE"
 
-    printf "   -------------------------------------------------- \n\n"
-    printf "  %-41s %-8s \n" 'Total Internal Flash (Available)' $AVAILABLEFLASH
-    printf "  %-41s %-8s \n\n" 'Total Internal Flash (Utilized)' $internalFlash
-    printf "  %-41s %-8s \n" 'Total Internal SRAM (Available)' $AVAILABLESRAM
-    printf "  %-41s %-8s \n" 'Total Internal SRAM (Utilized)' $internalSram
+    printf "   ---------------------------------------------------- \n\n"
+    printf "  %-41s %-10s \n" 'Total Internal Flash (Available)' $AVAILABLEFLASH
+    printf "  %-41s %-10s \n\n" 'Total Internal Flash (Utilized)' $internalFlash
+    printf "  %-41s %-10s \n" 'Total Internal SRAM (Available)' $AVAILABLESRAM
+    printf "  %-41s %-10s \n" 'Total Internal SRAM (Utilized)' $internalSram
 }
 
 memcalc

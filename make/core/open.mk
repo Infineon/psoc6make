@@ -1,6 +1,5 @@
 ################################################################################
 # \file open.mk
-# \version 1.0
 #
 # \brief
 # Opens/launches a specified tool 
@@ -27,6 +26,39 @@ ifeq ($(WHICHFILE),true)
 $(info Processing $(lastword $(MAKEFILE_LIST)))
 endif
 
+
+################################################################################
+# Additional tools
+################################################################################
+
+CY_OPEN_TYPE_LIST+=\
+	library-manager\
+	project-creator
+
+##########################
+# library-manager
+##########################
+
+CY_OPEN_library_manager_EXT=
+CY_OPEN_library_manager_FILE=
+CY_OPEN_library_manager_TOOL=$(CY_LIBRARY_MANAGER_DIR)/library-manager
+CY_OPEN_library_manager_TOOL_FLAGS=
+CY_OPEN_library_manager_TOOL_NEWCFG_FLAGS=
+
+##########################
+# project-creator
+##########################
+
+CY_OPEN_project_creator_EXT=
+CY_OPEN_project_creator_FILE=
+CY_OPEN_project_creator_TOOL=$(CY_PROJECT_CREATOR_DIR)/project-creator
+CY_OPEN_project_creator_TOOL_FLAGS=
+CY_OPEN_project_creator_TOOL_NEWCFG_FLAGS=
+
+
+################################################################################
+# Data verification
+################################################################################
 
 # Verify that the tool is supported
 ifneq ($(CY_OPEN_TYPE),)
@@ -119,6 +151,10 @@ else
 	$(info $(CY_NEWLINE)Launching $(notdir $(CY_OPEN_TOOL_LAUNCH)) tool on $(CY_OPEN_TOOL_FILE))
 	$(CY_NOISE) $(CY_OPEN_TOOL_LAUNCH) $(CY_OPEN_TOOL_ARGS) $(CY_OPEN_TOOL_FLAGS) $(CY_OPEN_TOOL_FILE) $(CY_OPEN_STDOUT) &
 endif
+
+modlibs:
+	$(info Launching library-manager)
+	$(CY_NOISE) $(CY_OPEN_library_manager_TOOL) $(CY_OPEN_library_manager_FLAGS) &
 
 #
 # Identify the phony targets

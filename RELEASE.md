@@ -1,22 +1,33 @@
-### PSoC 6 GNU make Build System 1.1
+### PSoC 6 GNU make Build System 1.2
 This repo provides the build recipe make files and scripts for building and programming PSoC 6 applications. Builds can be run either through a command-line interface (CLI) or through the ModusToolbox Integrated Devlopment Environment (IDE).
 
-### What's New In This Release?
-* Improved support for Multi-Core boards
-* Minor bug fixes
-
 ### What's Included?
-The this release of the PSoC 6 GNU make Build System includes complete support for building, programming, and debugging PSoC 6 application projects. It is expected that a code example contains a top level make file for itself and references a Board Support Package (BSP) that defines specifics items, like the PSoC 6 part, for the target board. This includes the following:
+The this release of the PSoC 6 GNU make Build System includes complete support for building, programming, and debugging PSoC 6 application projects. It is expected that a code example contains a top level make file for itself and references a Board Support Package (BSP) that defines specifics items, like the PSoC 6 part, for the target board. Supported functionality includes the following:
 * Supported operations:
     * Build
     * Program
     * Debug
+    * IDE Integration (Eclipse, VS Code, IAR)
+    * BSP Generation
 * Supported toolchains:
     * GCC
     * IAR
     * ARMv6
 
 This also includes the getlibs.bash script that can be used directly, or via the make target to download additional git repo based libraries for the application.
+
+### What Changed?
+#### v1.2
+* Added support for generating new BSPs
+* Added support for launching Library Manager
+* Added support for integrating with Embedded Workbench (beta)
+* Improved support for integrating with Eclipse
+* Improved file discovery performance
+#### v1.1
+* Improved support for Multi-Core boards
+* Minor Bug fixes
+#### v1.0
+* Initial release supporting build/program/debug on gcc/iar/armv6 toolchains
 
 ### Product/Asset Specific Instructions
 Builds require that the ModusToolbox tools be installed on your machine. This comes with the ModusToolbox IDE install. On Windows machines, it is recommended that CLI builds be executed using the Cygwin.bat located in ModusToolBox/tools_x.y/modus-shell install directory. This guarantees a consistent shell environment for your builds.

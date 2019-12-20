@@ -1,6 +1,5 @@
 ################################################################################
 # \file program.mk
-# \version 1.0
 #
 # \brief
 # This make file is called recursively and is used to build the
@@ -30,7 +29,7 @@ endif
 
 
 CY_GDB_CLIENT=$(CY_COMPILER_DIR)/bin/arm-none-eabi-gdb
-CY_GDB_ARGS=$(CY_INTERNAL_BASELIB_PATH)/make/scripts/gdbinit
+CY_GDB_ARGS=$(CY_INTERNAL_BASELIB_PATH)/make/scripts/$(CY_GDBINIT_FILE)
 
 ifeq ($(TOOLCHAIN),A_Clang)
 CY_OPENOCD_PROGRAM_IMG=$(CY_CONFIG_DIR)/$(APPNAME).bin $(TOOLCHAIN_VECT_BASE_CM4)
@@ -45,13 +44,11 @@ CY_OPENOCD_INTERFACE=source [find interface/kitprog3.cfg];
 CY_OPENOCD_TARGET=source [find target/$(CY_OPENOCD_DEVICE_CFG)];
 ifeq (,$(findstring CYB0,$(DEVICE)))
 CY_OPENOCD_CUSTOM_COMMAND?=psoc6 allow_efuse_program off;
-else
-CY_GDB_ARGS=$(CY_INTERNAL_BASELIB_PATH)/make/scripts/gdbinit_secure
 endif
 
 CY_OPENOCD_ERASE=init; reset init; psoc6 sflash_restrictions 1; erase_all; exit;
 CY_OPENOCD_PROGRAM=psoc6 sflash_restrictions 1; program $(CY_OPENOCD_PROGRAM_IMG) verify reset exit;
-CY_OPENOCD_DEBUG=$(CY_OPENOCD_CHIP_NAME).cpu.cm4 configure -rtos auto -rtos-wipe-on-reset-halt 1; $(CY_OPENOCD_EXTRA_PORT_FLAG); init; reset init;
+CY_OPENOCD_DEBUG=$(CY_OPENOCD_CHIP_NAME).cpu.$(CY_OPENOCD_CORE) configure -rtos auto -rtos-wipe-on-reset-halt 1; $(CY_OPENOCD_EXTRA_PORT_FLAG); init; reset init;
 
 CY_OPENOCD_ERASE_ARGS=$(CY_OPENOCD_SCRIPTS) -c \
 					"$(CY_OPENOCD_INTERFACE) $(CY_OPENOCD_CM0_DISABLE_FLAG); $(CY_OPENOCD_SMIF_DISABLE); $(CY_OPENOCD_TARGET) $(CY_OPENOCD_CUSTOM_COMMAND) $(CY_OPENOCD_ERASE)"

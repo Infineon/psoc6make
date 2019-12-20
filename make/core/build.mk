@@ -1,6 +1,5 @@
 ################################################################################
 # \file build.mk
-# \version 1.0
 #
 # \brief
 # Performs the compilation and linking steps.
@@ -27,21 +26,11 @@ ifeq ($(WHICHFILE),true)
 $(info Processing $(lastword $(MAKEFILE_LIST)))
 endif
 
+$(info )
+$(info Constructing build rules...)
 
 ################################################################################
-# Target output
-################################################################################
-
-ifneq ($(LIBNAME),)
-CY_BUILD_TARGET=$(CY_CONFIG_DIR)/$(LIBNAME).$(CY_TOOLCHAIN_SUFFIX_ARCHIVE)
-else
-CY_BUILD_TARGET=$(CY_CONFIG_DIR)/$(APPNAME).$(CY_TOOLCHAIN_SUFFIX_TARGET)
-endif
-CY_BUILD_MAPFILE=$(CY_CONFIG_DIR)/$(APPNAME).$(CY_TOOLCHAIN_SUFFIX_MAP)
-
-
-################################################################################
-# VPATH resolution
+# Macros
 ################################################################################
 
 #
@@ -51,19 +40,50 @@ CY_BUILD_MAPFILE=$(CY_CONFIG_DIR)/$(APPNAME).$(CY_TOOLCHAIN_SUFFIX_MAP)
 #
 CY_MACRO_VPATH_FIND=$(foreach level,$(1),$(if $(filter $(level)%,$(2)),$(level)))
 
+# 
+# Gather the includes in inclist_export.rsp files
+# $(1) : List of inclist_export.rsp files
 #
-# Search for relative paths in user sources and include them in the VPATH
-#
-CY_BUILD_VPATH_PATTERN=./ ./../ ./../../ ./../../../ ./../../../../ ./../../../../../ ./../../../../../../ ./../../../../../../../ \
-					../ ../../ ../../../ ../../../../ ../../../../../ ../../../../../../ ../../../../../../../
-VPATH+=$(call CY_MACRO_VPATH_FIND,$(CY_BUILD_VPATH_PATTERN),$(SOURCES))
+CY_MACRO_ECLIPSE_PRINT=$(shell \
+						for incFile in $(1); do\
+							incDirs="$$incDirs $$(cat $$incFile)";\
+						done;\
+						echo $$incDirs)
 
+#
+# Construct explicit rules for select files
+# $(1) : source file
+# $(2) : object file
+# $(3) : file origin identifier
+#
+define CY_MACRO_EXPLICIT_RULE
 
-##############################################################################
+# Build the correct compiler arguments
+$(2)_SUFFIX=$$(suffix $(1))
+ifeq ($$($(2)_SUFFIX),.$(CY_TOOLCHAIN_SUFFIX_s))
+$(2)_EXPLICIT_COMPILE_ARGS=$(CY_BUILD_COMPILE_AS_LC)
+else ifeq ($$($(2)_SUFFIX),.$(CY_TOOLCHAIN_SUFFIX_S))
+$(2)_EXPLICIT_COMPILE_ARGS=$(CY_BUILD_COMPILE_AS_UC)
+else ifeq ($$($(2)_SUFFIX),.$(CY_TOOLCHAIN_SUFFIX_C))
+$(2)_EXPLICIT_COMPILE_ARGS=$(CY_BUILD_COMPILE_EXPLICIT_C)
+else ifeq ($$($(2)_SUFFIX),.$(CY_TOOLCHAIN_SUFFIX_CPP))
+$(2)_EXPLICIT_COMPILE_ARGS=$(CY_BUILD_COMPILE_EXPLICIT_CPP)
+else
+$$(error Incompatible source file type encountered while constructing explicit rule: $(1))
+endif
+
+$(CY_CONFIG_DIR)/$(2) : $(1)
+ifneq ($(CY_MAKE_IDE),eclipse)
+	$$(info $$(CY_INDENT)Compiling $(3) file $$(CY_COMPILE_PRINT))
+else
+	$$(info Compiling $$< $$(CY_RECIPE_DEFINES) $$(sort $$(CY_RECIPE_INCLUDES) $$(call CY_MACRO_ECLIPSE_PRINT,$$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
+endif
+	$(CY_NOISE)$$($(2)_EXPLICIT_COMPILE_ARGS) $$@ $$<
+
+endef
+
 #
-# Macro to construct recursive make for dependent lib apps
-#
-# Arguments:
+# Construct recursive make for dependent lib apps
 # 1: The name of the target
 # 2: The lib app directory
 #
@@ -120,6 +140,18 @@ endef
 
 
 ################################################################################
+# Target output
+################################################################################
+
+ifneq ($(LIBNAME),)
+CY_BUILD_TARGET=$(CY_CONFIG_DIR)/$(LIBNAME).$(CY_TOOLCHAIN_SUFFIX_ARCHIVE)
+else
+CY_BUILD_TARGET=$(CY_CONFIG_DIR)/$(APPNAME).$(CY_TOOLCHAIN_SUFFIX_TARGET)
+CY_BUILD_MAPFILE=$(CY_CONFIG_DIR)/$(APPNAME).$(CY_TOOLCHAIN_SUFFIX_MAP)
+endif
+
+
+################################################################################
 # Shared libraries
 ################################################################################
 
@@ -151,24 +183,29 @@ endif
 ################################################################################
 
 #
-# The list of C and S source files that come from the application and generated source
+# Strip off the paths for conversion to build output files
 #
-CY_BUILD_SRC_S_FILES=$(patsubst $(CY_INTERNAL_APP_PATH)/%,/%,$(patsubst $(CY_INTERNAL_EXTAPP_PATH)/%,/%,\
-						$(filter %.$(CY_TOOLCHAIN_SUFFIX_S),$(CY_RECIPE_SOURCE))))
-CY_BUILD_SRC_s_FILES=$(patsubst $(CY_INTERNAL_APP_PATH)/%,/%,$(patsubst $(CY_INTERNAL_EXTAPP_PATH)/%,/%,\
-						$(filter %.$(CY_TOOLCHAIN_SUFFIX_s),$(CY_RECIPE_SOURCE))))
-CY_BUILD_SRC_C_FILES=$(patsubst $(CY_INTERNAL_APP_PATH)/%,/%,$(patsubst $(CY_INTERNAL_EXTAPP_PATH)/%,/%,\
-						$(filter %.$(CY_TOOLCHAIN_SUFFIX_C),$(CY_RECIPE_SOURCE))))
-CY_BUILD_SRC_CPP_FILES=$(patsubst $(CY_INTERNAL_APP_PATH)/%,/%,$(patsubst $(CY_INTERNAL_EXTAPP_PATH)/%,/%,\
-						$(filter %.$(CY_TOOLCHAIN_SUFFIX_CPP),$(CY_RECIPE_SOURCE))))
+CY_BUILD_SRC_STRIPPED=$(patsubst $(CY_INTERNAL_APP_PATH)/%,/%,$(patsubst $(CY_INTERNAL_EXTAPP_PATH)/%,/%,$(CY_RECIPE_SOURCE)))
+CY_BUILD_EXTSRC_RELATIVE=$(sort $(filter $(CY_INTERNAL_APP_PATH)/%,$(SOURCES)) $(filter ../%,$(SOURCES)) $(filter ./%,$(SOURCES)))
+CY_BUILD_EXTSRC_ABSOLUTE=$(filter-out $(CY_BUILD_EXTSRC_RELATIVE),$(SOURCES))
+CY_BUILD_EXTSRC_RELATIVE_STRIPPED=$(patsubst $(CY_INTERNAL_APP_PATH)/%,/%,$(subst ../,,$(CY_BUILD_EXTSRC_RELATIVE)))
+CY_BUILD_EXTSRC_ABSOLUTE_STRIPPED=$(notdir $(CY_BUILD_EXTSRC_ABSOLUTE))
+
+#
+# Source files that come from the application, generated, and user input
+#
+CY_BUILD_SRC_S_FILES=$(filter %.$(CY_TOOLCHAIN_SUFFIX_S),$(CY_BUILD_SRC_STRIPPED))
+CY_BUILD_SRC_s_FILES=$(filter %.$(CY_TOOLCHAIN_SUFFIX_s),$(CY_BUILD_SRC_STRIPPED))
+CY_BUILD_SRC_C_FILES=$(filter %.$(CY_TOOLCHAIN_SUFFIX_C),$(CY_BUILD_SRC_STRIPPED))
+CY_BUILD_SRC_CPP_FILES=$(filter %.$(CY_TOOLCHAIN_SUFFIX_CPP),$(CY_BUILD_SRC_STRIPPED))
 CY_BUILD_GENSRC_S_FILES=$(filter %.$(CY_TOOLCHAIN_SUFFIX_S),$(CY_RECIPE_GENERATED))
 CY_BUILD_GENSRC_s_FILES=$(filter %.$(CY_TOOLCHAIN_SUFFIX_s),$(CY_RECIPE_GENERATED))
 CY_BUILD_GENSRC_C_FILES=$(filter %.$(CY_TOOLCHAIN_SUFFIX_C),$(CY_RECIPE_GENERATED))
 CY_BUILD_GENSRC_CPP_FILES=$(filter %.$(CY_TOOLCHAIN_SUFFIX_CPP),$(CY_RECIPE_GENERATED))
-CY_BUILD_EXTSRC_S_FILES=$(patsubst $(CY_INTERNAL_APP_PATH)/%,/%,$(subst ../,,$(filter %.$(CY_TOOLCHAIN_SUFFIX_S),$(SOURCES))))
-CY_BUILD_EXTSRC_s_FILES=$(patsubst $(CY_INTERNAL_APP_PATH)/%,/%,$(subst ../,,$(filter %.$(CY_TOOLCHAIN_SUFFIX_s),$(SOURCES))))
-CY_BUILD_EXTSRC_C_FILES=$(patsubst $(CY_INTERNAL_APP_PATH)/%,/%,$(subst ../,,$(filter %.$(CY_TOOLCHAIN_SUFFIX_C),$(SOURCES))))
-CY_BUILD_EXTSRC_CPP_FILES=$(patsubst $(CY_INTERNAL_APP_PATH)/%,/%,$(subst ../,,$(filter %.$(CY_TOOLCHAIN_SUFFIX_CPP),$(SOURCES))))
+CY_BUILD_EXTSRC_S_FILES=$(filter %.$(CY_TOOLCHAIN_SUFFIX_S),$(CY_BUILD_EXTSRC_RELATIVE_STRIPPED) $(CY_BUILD_EXTSRC_ABSOLUTE_STRIPPED))
+CY_BUILD_EXTSRC_s_FILES=$(filter %.$(CY_TOOLCHAIN_SUFFIX_s),$(CY_BUILD_EXTSRC_RELATIVE_STRIPPED) $(CY_BUILD_EXTSRC_ABSOLUTE_STRIPPED))
+CY_BUILD_EXTSRC_C_FILES=$(filter %.$(CY_TOOLCHAIN_SUFFIX_C),$(CY_BUILD_EXTSRC_RELATIVE_STRIPPED) $(CY_BUILD_EXTSRC_ABSOLUTE_STRIPPED))
+CY_BUILD_EXTSRC_CPP_FILES=$(filter %.$(CY_TOOLCHAIN_SUFFIX_CPP),$(CY_BUILD_EXTSRC_RELATIVE_STRIPPED) $(CY_BUILD_EXTSRC_ABSOLUTE_STRIPPED))
 
 #
 # The list of object files
@@ -241,16 +278,6 @@ else
 CY_COMPILE_PRINT=$(notdir $<)
 endif
 
-# 
-# Gather the includes in inclist_export.rsp files
-# $(1) : List of inclist_export.rsp files
-#
-CY_MACRO_ECLIPSE_PRINT=$(shell \
-						for incFile in $(1); do\
-							incDirs="$$incDirs $$(cat $$incFile)";\
-						done;\
-						echo $$incDirs)
-
 #
 # Construct the full list of flags
 #
@@ -272,14 +299,18 @@ CY_BUILD_ALL_CXXFLAGS=\
 #
 # Compiler arguments
 #
-CY_BUILD_COMPILE_AS_UC=$(AS) $(CY_BUILD_ALL_ASFLAGS_UC) $(CY_TOOLCHAIN_INCRSPFILE_ASM)$(CY_CONFIG_DIR)/inclist.rsp \
+CY_BUILD_COMPILE_AS_UC:=$(AS) $(CY_BUILD_ALL_ASFLAGS_UC) $(CY_TOOLCHAIN_INCRSPFILE_ASM)$(CY_CONFIG_DIR)/inclist.rsp \
 						$(CY_BUILD_SHAREDLIB_INCLIST) $(CY_TOOLCHAIN_OUTPUT_OPTION)
-CY_BUILD_COMPILE_AS_LC=$(AS) $(CY_BUILD_ALL_ASFLAGS_LC) $(CY_TOOLCHAIN_INCRSPFILE_ASM)$(CY_CONFIG_DIR)/inclist.rsp \
+CY_BUILD_COMPILE_AS_LC:=$(AS) $(CY_BUILD_ALL_ASFLAGS_LC) $(CY_TOOLCHAIN_INCRSPFILE_ASM)$(CY_CONFIG_DIR)/inclist.rsp \
 						$(CY_BUILD_SHAREDLIB_INCLIST) $(CY_TOOLCHAIN_OUTPUT_OPTION)
-CY_BUILD_COMPILE_C=$(CC) $(CY_BUILD_ALL_CFLAGS) $(CY_TOOLCHAIN_INCRSPFILE)$(CY_CONFIG_DIR)/inclist.rsp \
+CY_BUILD_COMPILE_C:=$(CC) $(CY_BUILD_ALL_CFLAGS) $(CY_TOOLCHAIN_INCRSPFILE)$(CY_CONFIG_DIR)/inclist.rsp \
 						$(CY_BUILD_SHAREDLIB_INCLIST) $(CY_TOOLCHAIN_DEPENDENCIES) $(CY_TOOLCHAIN_OUTPUT_OPTION) 
-CY_BUILD_COMPILE_CPP=$(CXX) $(CY_BUILD_ALL_CXXFLAGS) $(CY_TOOLCHAIN_INCRSPFILE)$(CY_CONFIG_DIR)/inclist.rsp \
+CY_BUILD_COMPILE_CPP:=$(CXX) $(CY_BUILD_ALL_CXXFLAGS) $(CY_TOOLCHAIN_INCRSPFILE)$(CY_CONFIG_DIR)/inclist.rsp \
 						$(CY_BUILD_SHAREDLIB_INCLIST) $(CY_TOOLCHAIN_DEPENDENCIES) $(CY_TOOLCHAIN_OUTPUT_OPTION)
+CY_BUILD_COMPILE_EXPLICIT_C:=$(CC) $(CY_BUILD_ALL_CFLAGS) $(CY_TOOLCHAIN_INCRSPFILE)$(CY_CONFIG_DIR)/inclist.rsp \
+						$(CY_BUILD_SHAREDLIB_INCLIST) $(CY_TOOLCHAIN_EXPLICIT_DEPENDENCIES) $(CY_TOOLCHAIN_OUTPUT_OPTION) 
+CY_BUILD_COMPILE_EXPLICIT_CPP:=$(CXX) $(CY_BUILD_ALL_CXXFLAGS) $(CY_TOOLCHAIN_INCRSPFILE)$(CY_CONFIG_DIR)/inclist.rsp \
+						$(CY_BUILD_SHAREDLIB_INCLIST) $(CY_TOOLCHAIN_EXPLICIT_DEPENDENCIES) $(CY_TOOLCHAIN_OUTPUT_OPTION)
 
 #
 # Linker arguments
@@ -319,8 +350,8 @@ CY_BUILD_LINKER_DEPS=\
 #
 # Read previous build's configuration if one exists
 #
-CY_BUILD_COMPILER_PREV=$(shell if [ -f "$(CY_CONFIG_DIR)/.cycompiler" ]; then cat $(CY_CONFIG_DIR)/.cycompiler; fi)
-CY_BUILD_LINKER_PREV=$(shell if [ -f "$(CY_CONFIG_DIR)/.cylinker" ]; then cat $(CY_CONFIG_DIR)/.cylinker; fi)
+CY_BUILD_COMPILER_PREV:=$(shell if [ -f "$(CY_CONFIG_DIR)/.cycompiler" ]; then cat $(CY_CONFIG_DIR)/.cycompiler; fi)
+CY_BUILD_LINKER_PREV:=$(shell if [ -f "$(CY_CONFIG_DIR)/.cylinker" ]; then cat $(CY_CONFIG_DIR)/.cylinker; fi)
 
 #
 # Take care of the quotes for the echo command
@@ -350,167 +381,28 @@ endif
 
 
 ################################################################################
-# Application source Compilation
+# Compilation rules construction
 ################################################################################
 
-# Compile .S source
-$(CY_CONFIG_DIR)/%.$(CY_TOOLCHAIN_SUFFIX_O) : $(CY_INTERNAL_APP_PATH)/%.$(CY_TOOLCHAIN_SUFFIX_S)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling app file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_AS_UC) $@ $<
+# Create explicit rules for auto-discovered (relative path) files
+$(foreach explicit,$(CY_RECIPE_SOURCE),$(eval $(call \
+CY_MACRO_EXPLICIT_RULE,$(explicit),$(patsubst $(CY_INTERNAL_APP_PATH)/%,%,$(patsubst $(CY_INTERNAL_EXTAPP_PATH)/%,%,$(addsuffix \
+.$(CY_TOOLCHAIN_SUFFIX_O),$(basename $(explicit))))),app)))
 
-# Compile .s source
-$(CY_CONFIG_DIR)/%.$(CY_TOOLCHAIN_SUFFIX_O) : $(CY_INTERNAL_APP_PATH)/%.$(CY_TOOLCHAIN_SUFFIX_s)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling app file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_AS_LC) $@ $<
+# Create explicit rules for generated (relative/absolute path) files
+$(foreach explicit,$(CY_RECIPE_GENERATED),$(eval $(call \
+CY_MACRO_EXPLICIT_RULE,$(explicit),$(patsubst $(CY_BUILDTARGET_DIR)/%,%,$(addsuffix \
+.$(CY_TOOLCHAIN_SUFFIX_O),$(basename $(explicit)))),generated)))
 
-# Compile .c source
-$(CY_CONFIG_DIR)/%.$(CY_TOOLCHAIN_SUFFIX_O) : $(CY_INTERNAL_APP_PATH)/%.$(CY_TOOLCHAIN_SUFFIX_C)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling app file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_C) $@ $<
+# Create explicit rules for user (relative path) files
+$(foreach explicit,$(CY_BUILD_EXTSRC_RELATIVE),$(eval $(call \
+CY_MACRO_EXPLICIT_RULE,$(explicit),$(addprefix user/,$(patsubst $(CY_INTERNAL_APP_PATH)/%,/%,$(subst ../,,$(addsuffix \
+.$(CY_TOOLCHAIN_SUFFIX_O),$(basename $(explicit)))))),user)))
 
-# Compile .cpp source
-$(CY_CONFIG_DIR)/%.$(CY_TOOLCHAIN_SUFFIX_O) : $(CY_INTERNAL_APP_PATH)/%.$(CY_TOOLCHAIN_SUFFIX_CPP)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling app file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_CPP) $@ $<
-
-
-################################################################################
-# ExtApp source Compilation
-################################################################################
-
-# Compile .S source
-$(CY_CONFIG_DIR)/%.$(CY_TOOLCHAIN_SUFFIX_O) : $(CY_INTERNAL_EXTAPP_PATH)/%.$(CY_TOOLCHAIN_SUFFIX_S)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling extapp file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_AS_UC) $@ $<
-
-# Compile .s source
-$(CY_CONFIG_DIR)/%.$(CY_TOOLCHAIN_SUFFIX_O) : $(CY_INTERNAL_EXTAPP_PATH)/%.$(CY_TOOLCHAIN_SUFFIX_s)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling extapp file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_AS_LC) $@ $<
-
-# Compile .c source
-$(CY_CONFIG_DIR)/%.$(CY_TOOLCHAIN_SUFFIX_O) : $(CY_INTERNAL_EXTAPP_PATH)/%.$(CY_TOOLCHAIN_SUFFIX_C)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling extapp file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_C) $@ $<
-
-# Compile .cpp source
-$(CY_CONFIG_DIR)/%.$(CY_TOOLCHAIN_SUFFIX_O) : $(CY_INTERNAL_EXTAPP_PATH)/%.$(CY_TOOLCHAIN_SUFFIX_CPP)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling extapp file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_CPP) $@ $<
-
-
-################################################################################
-# Generated Source Compilation
-################################################################################
-
-# Compile .S source
-$(CY_CONFIG_DIR)/generated/%.$(CY_TOOLCHAIN_SUFFIX_O) : $(CY_GENERATED_DIR)/%.$(CY_TOOLCHAIN_SUFFIX_S)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling generated file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_AS_UC) $@ $<
-
-# Compile .s source
-$(CY_CONFIG_DIR)/generated/%.$(CY_TOOLCHAIN_SUFFIX_O) : $(CY_GENERATED_DIR)/%.$(CY_TOOLCHAIN_SUFFIX_s)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling generated file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_AS_LC) $@ $<
-
-# Compile .c source
-$(CY_CONFIG_DIR)/generated/%.$(CY_TOOLCHAIN_SUFFIX_O) : $(CY_GENERATED_DIR)/%.$(CY_TOOLCHAIN_SUFFIX_C)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling generated file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_C) $@ $<
-
-# Compile .cpp source
-$(CY_CONFIG_DIR)/generated/%.$(CY_TOOLCHAIN_SUFFIX_O) : $(CY_GENERATED_DIR)/%.$(CY_TOOLCHAIN_SUFFIX_CPP)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling generated file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_CPP) $@ $<
-
-
-################################################################################
-# User source Compilation
-################################################################################
-
-# Compile .S source
-$(CY_CONFIG_DIR)/user/%.$(CY_TOOLCHAIN_SUFFIX_O) : %.$(CY_TOOLCHAIN_SUFFIX_S)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling user file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_AS_UC) $@ $<
-
-# Compile .s source
-$(CY_CONFIG_DIR)/user/%.$(CY_TOOLCHAIN_SUFFIX_O) : %.$(CY_TOOLCHAIN_SUFFIX_s)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling user file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_AS_LC) $@ $<
-
-# Compile .c source
-$(CY_CONFIG_DIR)/user/%.$(CY_TOOLCHAIN_SUFFIX_O) : %.$(CY_TOOLCHAIN_SUFFIX_C)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling user file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_C) $@ $<
-
-# Compile .cpp source
-$(CY_CONFIG_DIR)/user/%.$(CY_TOOLCHAIN_SUFFIX_O) : %.$(CY_TOOLCHAIN_SUFFIX_CPP)
-ifneq ($(CY_MAKE_IDE),eclipse)
-	$(info $(CY_INDENT)Compiling user file $(CY_COMPILE_PRINT))
-else
-	$(info Compiling $< $(CY_RECIPE_DEFINES) $(sort $(CY_RECIPE_INCLUDES) $(call CY_MACRO_ECLIPSE_PRINT,$(CY_SHAREDLIB_INCLUDES_EXPORT_LIST))))
-endif
-	$(CY_NOISE)$(CY_BUILD_COMPILE_CPP) $@ $<
+# Create explicit rules for user (absolute path) files
+$(foreach explicit,$(CY_BUILD_EXTSRC_ABSOLUTE),$(eval $(call \
+CY_MACRO_EXPLICIT_RULE,$(explicit),$(addprefix user/,$(notdir $(addsuffix \
+.$(CY_TOOLCHAIN_SUFFIX_O),$(basename $(explicit))))),user)))
 
 
 ################################################################################
@@ -679,6 +571,8 @@ endif
 # Include generated dependency files (if rebuilding)
 #
 -include $(CY_DEPENDENCY_FILES)
+
+$(info Build rules construction complete)
 
 #
 # Indicate all phony targets that should be built regardless

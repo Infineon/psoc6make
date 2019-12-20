@@ -1,6 +1,5 @@
 ################################################################################
 # \file IAR.mk
-# \version 1.0
 #
 # \brief
 # IAR toolchain configuration.
@@ -174,6 +173,7 @@ CY_TOOLCHAIN_OBJRSPFILE=-f
 # Produce a makefile dependency rule for each input file
 #
 CY_TOOLCHAIN_DEPENDENCIES=--dependencies=m "$(subst .$(CY_TOOLCHAIN_SUFFIX_O),.$(CY_TOOLCHAIN_SUFFIX_D),$@)"
+CY_TOOLCHAIN_EXPLICIT_DEPENDENCIES=--dependencies=m "$$(subst .$(CY_TOOLCHAIN_SUFFIX_O),.$(CY_TOOLCHAIN_SUFFIX_D),$$@)"
 
 #
 # Additional includes in the compilation process based on this

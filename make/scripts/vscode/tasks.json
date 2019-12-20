@@ -4,7 +4,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "GetLibs",
+            "label": "Utility: getlibs",
             "type": "shell",
             "windows" : {
                 "command": "&&MODUSSHELL&&/bin/bash.exe" ,
@@ -33,7 +33,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Refresh",
+            "label": "Utility: refresh",
             "type": "shell",
             "windows" : {
                 "command": "&&MODUSSHELL&&/bin/bash.exe" ,
@@ -62,7 +62,7 @@
             "problemMatcher": []
         },        
         {
-            "label": "Build Debug",
+            "label": "Build: Build [Debug]",
             "type": "shell",
 
             "windows" : {
@@ -96,7 +96,7 @@
             }
         },
         {
-            "label": "Rebuild Debug",
+            "label": "Build: Clean and Rebuild [Debug]",
             "type": "shell",
 
             "windows" : {
@@ -130,7 +130,7 @@
             }
         },        
         {
-            "label": "Clean Debug",
+            "label": "Build: Clean [Debug]",
             "type": "shell",
 
             "windows" : {
@@ -164,7 +164,7 @@
             }
         },        
         {
-            "label": "Build Release",
+            "label": "Build: Build [Release]",
             "type": "shell",
             "windows" : {
                 "command": "&&MODUSSHELL&&/bin/bash.exe" ,
@@ -197,7 +197,7 @@
             }            
         },
         {
-            "label": "Rebuild Release",
+            "label": "Build: Clean and Rebuild [Release]",
             "type": "shell",
             "windows" : {
                 "command": "&&MODUSSHELL&&/bin/bash.exe" ,
@@ -230,7 +230,7 @@
             }            
         },        
         {
-            "label": "Clean Release",
+            "label": "Build: Clean [Release]",
             "type": "shell",
             "windows" : {
                 "command": "&&MODUSSHELL&&/bin/bash.exe" ,
@@ -263,7 +263,7 @@
             }            
         },        
         {
-            "label": "Base Configurator",
+            "label": "Tool: device-configurator",
             "type": "shell",
             "windows" : {
                 "command": "&&MODUSSHELL&&/bin/bash.exe" ,
@@ -292,7 +292,7 @@
             "problemMatcher": "$gcc"
         },
         {
-            "label": "Library Manager",
+            "label": "Tool: library-manager",
             "type": "shell",
             "windows" : {
                 "command": "&&MODUSLIBMANAGER&&/library-manager.exe",
@@ -315,11 +315,7 @@
                     "${workspaceRoot}"
                 ]
             },              
-            "problemMatcher": "$gcc",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }            
+            "problemMatcher": "$gcc"      
         }                
     ]
 }
