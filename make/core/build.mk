@@ -6,7 +6,7 @@
 #
 ################################################################################
 # \copyright
-# Copyright 2018-2019 Cypress Semiconductor Corporation
+# Copyright 2018-2020 Cypress Semiconductor Corporation
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -354,10 +354,10 @@ CY_BUILD_COMPILER_PREV:=$(shell if [ -f "$(CY_CONFIG_DIR)/.cycompiler" ]; then c
 CY_BUILD_LINKER_PREV:=$(shell if [ -f "$(CY_CONFIG_DIR)/.cylinker" ]; then cat $(CY_CONFIG_DIR)/.cylinker; fi)
 
 #
-# Take care of the quotes for the echo command
+# Take care of the quotes and dollar signs for the echo command
 #
-CY_BUILD_COMPILER_DEPS_FORMATTED=$(subst ',,$(subst ",,$(CY_BUILD_COMPILER_DEPS)))
-CY_BUILD_LINKER_DEPS_FORMATTED=$(subst ',,$(subst ",,$(CY_BUILD_LINKER_DEPS)))
+CY_BUILD_COMPILER_DEPS_FORMATTED=$(subst $,,$(subst ',,$(subst ",,$(CY_BUILD_COMPILER_DEPS))))
+CY_BUILD_LINKER_DEPS_FORMATTED=$(subst $,,$(subst ',,$(subst ",,$(CY_BUILD_LINKER_DEPS))))
 
 #
 # Create compilation dependency file

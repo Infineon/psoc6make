@@ -6,7 +6,7 @@
 #
 ################################################################################
 # \copyright
-# Copyright 2018-2019 Cypress Semiconductor Corporation
+# Copyright 2018-2020 Cypress Semiconductor Corporation
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -142,6 +142,12 @@ CY_OPENOCD_DEVICE_CFG=psoc6_512k.cfg
 CY_JLINK_DEVICE_CFG_PROGRAM=CY8C6xx5_CM0p_sect256KB_tm
 CY_JLINK_DEVICE_CFG_ATTACH=CY8C6xx5_$(CY_JLINKSCRIPT_CORE)_sect256KB
 CY_JLINK_DEVICE_CFG_DEBUG=$(CY_JLINK_DEVICE_CFG_ATTACH)$(CY_JLINK_DEVICE_CFG_DEBUG_SUFFIX)
+ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_SECURE)))
+CY_PSOC_ARCH=psoc6_512k_secure
+CY_PSOC_DIE_NAME=PSoC6A512KSecure
+CY_OPENOCD_CHIP_NAME=psoc64_512k
+CY_OPENOCD_DEVICE_CFG=psoc6_512k_secure.cfg
+endif
 
 else
 $(call CY_MACRO_ERROR,Incorrect part number $(DEVICE). Check DEVICE variable.)
@@ -150,7 +156,9 @@ endif
 #
 # Flash memory specifics
 #
-ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_FLASH_KB_512)))
+ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_FLASH_KB_448)))
+CY_MEMORY_FLASH=458752
+else ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_FLASH_KB_512)))
 CY_MEMORY_FLASH=524288
 else ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_FLASH_KB_832)))
 CY_MEMORY_FLASH=850944
@@ -195,6 +203,10 @@ endif
 else ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_DIE_PSOC6A2M)))
 ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_FLASH_KB_1856)))
 CY_LINKER_SCRIPT_NAME=cyb06xxa
+endif
+else ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_DIE_PSOC6A512K)))
+ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_FLASH_KB_448)))
+CY_LINKER_SCRIPT_NAME=cyb06xx5
 endif
 endif
 

@@ -6,7 +6,7 @@
 #
 ################################################################################
 # \copyright
-# Copyright 2018-2019 Cypress Semiconductor Corporation
+# Copyright 2018-2020 Cypress Semiconductor Corporation
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -284,6 +284,10 @@ get_env_info:
 
 CY_HELP_printlibs=Prints the status of the library repos.
 printlibs:
+
+# Defined in recipe's program.mk
+CY_HELP_progtool=Performs specified operations on the programmer/firmware-loader
+progtool:
 
 # Empty libs on purpose. May be defined by the application
 shared_libs:

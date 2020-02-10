@@ -6,7 +6,7 @@
 #
 ################################################################################
 # \copyright
-# Copyright 2018-2019 Cypress Semiconductor Corporation
+# Copyright 2018-2020 Cypress Semiconductor Corporation
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -78,6 +78,8 @@ CY_HELP_bsp_VERBOSE=This target generates a new Board Support Package with the n
 					TARGET. The TARGET_GEN variable must be populated with the name of the new TARGET. Optionally, you may\
 					define the target device (DEVICE_GEN) and additional devices (ADDITIONAL_DEVICES_GEN) such as radios. E.g.\
 					$(CY_NEWLINE)$(CY_NEWLINE)make bsp TARGET_GEN=NewBoard DEVICE_GEN=CY8C624ABZI-D44 ADDITIONAL_DEVICES_GEN=CYW4343WKUBG
+CY_HELP_progtool_VERBOSE=This target expects user-interaction on the shell while running it. When prompted, the user must specify the\
+					command(s) to run for the tool.
 CY_HELP_check_VERBOSE=Not all tools are necessary for every build recipe. This target allows the user\
 					to get an idea of which tools are missing if a build fails in an unexpected way.
 CY_HELP_get_app_info_VERBOSE=The file types can be specified by setting the\
@@ -93,13 +95,16 @@ CY_HELP_printlibs_VERBOSE=This target parses through the library repos and print
 #
 CY_HELP_TARGET=Specifies the target board/kit. E.g. CY8CPROTO-062-4343W.
 CY_HELP_TARGET_VERBOSE=Currently available target(s) in this application is/are, [ $(CY_TARGET_AVAILABLE) ].
-CY_HELP_APPNAME=Specifies the name of the application. E.g. AppV1.
-CY_HELP_APPNAME_VERBOSE=This variable signifies that the application will build an artifact that is\
-				intended for a target board. For applications that need to build into an archive (library),\
-				use the LIBNAME variable.
-CY_HELP_LIBNAME=Specifies the name of the library application. E.g. LibV1.
-CY_HELP_LIBNAME_VERBOSE=This variable signifies that the application will build an archive (library).\
-				These library applications can be added as a dependency to an artifact producing application\
+CY_HELP_APPNAME=Specifies the name of the app. E.g. "AppV1" -> AppV1.elf
+CY_HELP_APPNAME_VERBOSE=This variable is used to set the name of the application artifact (programmable image).\
+				It also signifies that the application will build for a programmable image artifact that is\
+				intended for a target board. For applications that need to build to an archive (library),\
+				use the LIBNAME variable.\
+				$(CY_NEWLINE)Note: This variable may also be used when generating launch configs when invoking the "eclipse" target.
+CY_HELP_LIBNAME=Specifies the name of the library app. E.g. "LibV1" -> LibV1.a
+CY_HELP_LIBNAME_VERBOSE=This variable is used to set the name of the application artifact (prebuilt library).\
+				It also signifies that the application will build an archive (library) that is intended to be linked\
+				to another application. These library applications can be added as a dependency to an artifact producing application\
 				using the SEARCH_LIBS_AND_INCLUDES variable.
 CY_HELP_TOOLCHAIN=Specifies the toolchain for building the application. E.g. GCC_ARM.
 CY_HELP_TOOLCHAIN_VERBOSE=Supported toolchains for this target are, [ $(CY_SUPPORTED_TOOLCHAINS) ].
@@ -275,8 +280,8 @@ CY_HELP_CY_PYTHON_PATH_VERBOSE=For make targets that depend on Python, the build
 					and uses that to invoke python. If however CY_PYTHON_PATH is defined, it will use that python executable.
 
 # Pass these to CY_HELP to get the full verbose info
-CY_HELP_TARGETS_ALL=all getlibs build qbuild program qprogram debug qdebug clean help eclipse vscode iar open modlibs config config_bt config_usbdev \
-					bsp check get_app_info get_env_info printlibs
+CY_HELP_TARGETS_ALL=all getlibs build qbuild program qprogram debug qdebug clean help eclipse vscode ewarm8 open modlibs config config_bt config_usbdev \
+					bsp progtool check get_app_info get_env_info printlibs
 CY_HELP_BASIC_CFG_ALL=TARGET APPNAME LIBNAME TOOLCHAIN CONFIG VERBOSE
 CY_HELP_ADVANCED_CFG_ALL=SOURCES INCLUDES DEFINES VFP_SELECT CFLAGS CXXFLAGS ASFLAGS LDFLAGS LDLIBS LINKER_SCRIPT \
 					PREBUILD POSTBUILD COMPONENTS DISABLE_COMPONENTS SEARCH_LIBS_AND_INCLUDES
@@ -294,14 +299,14 @@ ifneq ($(CY_HELP),)
 	$(foreach topic,$(CY_HELP),\
 	$(info $(CY_NEWLINE)Topic-specific help for "$(topic)")\
 	$(info $(CY_SPACE)$(CY_SPACE)Brief: $(CY_HELP_$(topic)))\
-	$(info $(CY_SPACE)$(CY_SPACE)Verbose: $(CY_HELP_$(topic)_VERBOSE)))
+	$(info $(CY_NEWLINE)$(CY_HELP_$(topic)_VERBOSE)))
 else
 	@echo 
 	$(info                                                                                    )
 	$(info ==============================================================================     )
 	$(info $(CY_SPACE)Cypress Build System                                                    )
 	$(info ==============================================================================     )
-	$(info $(CY_SPACE)Copyright 2018-2019 Cypress Semiconductor Corporation                   )
+	$(info $(CY_SPACE)Copyright 2018-2020 Cypress Semiconductor Corporation                   )
 	$(info $(CY_SPACE)SPDX-License-Identifier: Apache-2.0                                     )
 	$(info                                                                                    )
 	$(info $(CY_SPACE)Licensed under the Apache License, Version 2.0 (the "License");         )
@@ -356,6 +361,7 @@ else
 	$(info =======================================                       )
 	$(info $(CY_SPACE)Utility make targets                               )
 	$(info =======================================                       )
+	$(info $(CY_SPACE)progtool            $(CY_HELP_progtool))
 	$(info $(CY_SPACE)bsp                 $(CY_HELP_bsp))
 	$(info $(CY_SPACE)check               $(CY_HELP_check))
 	$(info $(CY_SPACE)get_app_info        $(CY_HELP_get_app_info))
