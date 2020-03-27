@@ -1,4 +1,4 @@
-### PSoC 6 GNU make Build System
+# PSoC 6 GNU make Build System Release Notes
 This repo provides the build recipe make files and scripts for building and programming PSoC 6 applications. Builds can be run either through a command-line interface (CLI) or through the ModusToolbox Integrated Devlopment Environment (IDE).
 
 ### What's Included?
@@ -17,6 +17,10 @@ The this release of the PSoC 6 GNU make Build System includes complete support f
 This also includes the getlibs.bash script that can be used directly, or via the make target to download additional git repo based libraries for the application.
 
 ### What Changed?
+#### v1.3.0
+* Separated build process into two stages
+* Added support for building dependent apps for CM0+ & MCU Boot
+* Added support for exporting to uvision5
 #### v1.2.1
 * Added support for PSoC 64 S3 parts
 * Improved description for some targets
