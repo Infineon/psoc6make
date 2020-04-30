@@ -170,6 +170,15 @@ CY_TOOLCHAIN_ARFLAGS=\
 	--verbose
 
 #
+# Enable Multi-Threaded build arguments
+#
+ifeq ($(filter FREERTOS,$(COMPONENTS)),FREERTOS)
+CY_TOOLCHAIN_CFLAGS+=--dlib_config=full
+CY_TOOLCHAIN_CXXFLAGS+=--dlib_config=full
+CY_TOOLCHAIN_LDFLAGS+=--threaded_lib
+endif
+
+#
 # Toolchain-specific suffixes
 #
 CY_TOOLCHAIN_SUFFIX_S=S

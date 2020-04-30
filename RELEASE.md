@@ -17,6 +17,8 @@ The this release of the PSoC 6 GNU make Build System includes complete support f
 This also includes the getlibs.bash script that can be used directly, or via the make target to download additional git repo based libraries for the application.
 
 ### What Changed?
+#### v1.3.1
+* Updated IAR to include '--threaded_lib' when building for FreeRTOS. This should make use of the clib-support library to ensure thread safe operation.
 #### v1.3.0
 * Separated build process into two stages
 * Added support for building dependent apps for CM0+ & MCU Boot
