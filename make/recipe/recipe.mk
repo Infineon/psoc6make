@@ -2,7 +2,7 @@
 # \file recipe.mk
 #
 # \brief
-# Set up a set of defines, includes, software components, linker script, 
+# Set up a set of defines, includes, software components, linker script,
 # Pre and Post build steps and call a macro to create a specific ELF file.
 #
 ################################################################################
@@ -40,9 +40,8 @@ LINKER_SCRIPT=$(CY_TARGET_DIR)/linker/TOOLCHAIN_$(TOOLCHAIN)/$(CY_LINKER_SCRIPT_
 endif
 endif
 
-
-ifeq ($(shell if [ -f $(LINKER_SCRIPT) ]; then echo 1; else echo 0; fi;),0)
-$(error The specified linker script could not be found at $(LINKER_SCRIPT))
+ifeq ($(wildcard $(LINKER_SCRIPT)),)
+$(call CY_MACRO_ERROR,The specified linker script could not be found at "$(LINKER_SCRIPT)")
 endif
 
 ifeq ($(TOOLCHAIN),A_Clang)
@@ -68,7 +67,7 @@ CY_RECIPE_ASFLAGS?=\
 
 CY_RECIPE_ARFLAGS?=\
 	$(CY_TOOLCHAIN_ARFLAGS)
-		
+
 CY_RECIPE_LDFLAGS?=\
 	$(LDFLAGS)\
 	$(CY_TOOLCHAIN_LDFLAGS)\
@@ -207,12 +206,12 @@ progtool:
 	echo "Available commands";\
 	echo ==============================================================================;\
 	echo;\
-	"$(CY_FW_LOADER_DIR)/bin/fw-loader" --help | sed 's/\t/ /g';\
+	"$(CY_FW_LOADER_DIR)/bin/fw-loader" --help | sed s/'	'/' '/g;\
 	echo ==============================================================================;\
 	echo "Connected device(s)";\
 	echo ==============================================================================;\
 	echo;\
-	deviceList=$$("$(CY_FW_LOADER_DIR)/bin/fw-loader" --device-list | grep "FW Version" | sed 's/\t/ /g');\
+	deviceList=$$("$(CY_FW_LOADER_DIR)/bin/fw-loader" --device-list | grep "FW Version" | sed s/'	'/' '/g);\
 	if [[ ! -n "$$deviceList" ]]; then\
 		echo "ERROR: Could not find any connected devices";\
 		echo;\
@@ -226,7 +225,7 @@ progtool:
 	echo ==============================================================================;\
 	echo;\
 	echo " Specify the command (and optionally the device name).";\
-	echo " E.g. --mode kp3-daplink \"KitProg3 CMSIS-DAP HID-0123456789ABCDEF\"";\
+	echo " E.g. --mode kp3-daplink KitProg3 CMSIS-DAP HID-0123456789ABCDEF";\
 	echo;\
 	read -p " > " -a params;\
 	echo;\
@@ -235,17 +234,16 @@ progtool:
 	echo ==============================================================================;\
 	echo;\
 	paramsSize=$${#params[@]};\
-	# Need to quote the device-name only;\
 	if [[ $$paramsSize > 2 ]]; then\
 		if [[ $${params[1]} == "kp3-"* ]]; then\
 			deviceName="$${params[@]:2:$$paramsSize}";\
-			"$(CY_FW_LOADER_DIR)/bin/fw-loader" $${params[0]} $${params[1]} "$$deviceName";\
+			"$(CY_FW_LOADER_DIR)/bin/fw-loader" $${params[0]} $${params[1]} "$$deviceName" | sed s/'	'/' '/g;\
 		else\
 			deviceName="$${params[@]:1:$$paramsSize}";\
-			"$(CY_FW_LOADER_DIR)/bin/fw-loader" $${params[0]} "$$deviceName";\
+			"$(CY_FW_LOADER_DIR)/bin/fw-loader" $${params[0]} "$$deviceName" | sed s/'	'/' '/g;\
 		fi;\
 	else\
-		"$(CY_FW_LOADER_DIR)/bin/fw-loader" "$${params[@]}";\
+		"$(CY_FW_LOADER_DIR)/bin/fw-loader" "$${params[@]}" | sed s/'	'/' '/g;\
 	fi;
 
 #

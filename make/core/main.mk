@@ -324,7 +324,7 @@ Windows: Windows Store$(CY_NEWLINE)\
 macOS: brew install python3 $(CY_NEWLINE)\
 Linux (Debian/Ubuntu): sudo apt-get python3 $(CY_NEWLINE)\
 )
-$(error )
+$(call CY_MACRO_ERROR,)
 endif
 
 export CY_PYTHON_PATH=$(CY_PYTHON_SEARCH_PATH)
@@ -335,7 +335,7 @@ else
 ifeq ($(shell [[ $$($(CY_PYTHON_FROM_CMD)$(CY_PYTHON_PATH) --version 2>&1) == "Python 3"* ]] && { echo true; } || { echo false; }),false)
 $(info The path "$(CY_PYTHON_PATH)" is either an invalid path or contains an incorrect version of python.$(CY_NEWLINE)\
 Please provide the path to the python 3 executable. For example, "usr/bin/python3".$(CY_NEWLINE) )
-$(error )
+$(call CY_MACRO_ERROR,)
 endif
 
 endif # ifeq ($(CY_PYTHON_PATH),)
@@ -366,7 +366,7 @@ $(info )
 $(info Initializing build: $(APPNAME)$(LIBNAME) $(CONFIG) $(TARGET) $(TOOLCHAIN))
 ifeq ($(wildcard $(CY_INTERNAL_BASELIB_PATH)),)
 $(info )
-$(error Cannot find the base library. Run "make getlibs" and/or check\
+$(call CY_MACRO_ERROR,Cannot find the base library. Run "make getlibs" and/or check\
 that the library location is correct in the CY_BASELIB_PATH variable)
 endif
 endif
@@ -377,37 +377,37 @@ endif
 
 ifneq ($(APPNAME),)
 ifneq ($(LIBNAME),)
-$(error An application cannot define both APPNAME and LIBNAME. Define one or the other)
+$(call CY_MACRO_ERROR,An application cannot define both APPNAME and LIBNAME. Define one or the other)
 endif
 endif
 ifneq ($(findstring -I,$(INCLUDES)),)
-$(error INCLUDES must be directories without -I prepended)
+$(call CY_MACRO_ERROR,INCLUDES must be directories without -I prepended)
 endif
 ifneq ($(findstring -D,$(DEFINES)),)
-$(error DEFINES must be specified without -D prepended)
+$(call CY_MACRO_ERROR,DEFINES must be specified without -D prepended)
 endif
 ifneq ($(findstring -I,$(CFLAGS)),)
-$(error Include paths must be specified in the INCLUDES variable instead\
+$(call CY_MACRO_ERROR,Include paths must be specified in the INCLUDES variable instead\
 of directly in CFLAGS. These must be directories without -I prepended)
 endif
 ifneq ($(findstring -D,$(CFLAGS)),)
-$(error Defines must be specified in the DEFINES variable instead\
+$(call CY_MACRO_ERROR,Defines must be specified in the DEFINES variable instead\
 of directly in CFLAGS. These must be specified without -D prepended)
 endif
 ifneq ($(findstring -I,$(CXXFLAGS)),)
-$(error Include paths must be specified in the INCLUDES variable instead\
+$(call CY_MACRO_ERROR,Include paths must be specified in the INCLUDES variable instead\
 of directly in CXXFLAGS. These must be directories without -I prepended)
 endif
 ifneq ($(findstring -D,$(CXXFLAGS)),)
-$(error Defines must be specified in the DEFINES variable instead\
+$(call CY_MACRO_ERROR,Defines must be specified in the DEFINES variable instead\
 of directly in CXXFLAGS. These must be specified without -D prepended)
 endif
 ifneq ($(findstring -I,$(ASFLAGS)),)
-$(error Include paths must be specified in the INCLUDES variable instead\
+$(call CY_MACRO_ERROR,Include paths must be specified in the INCLUDES variable instead\
 of directly in ASFLAGS. These must be directories without -I prepended)
 endif
 ifneq ($(findstring -D,$(ASFLAGS)),)
-$(error Defines must be specified in the DEFINES variable instead\
+$(call CY_MACRO_ERROR,Defines must be specified in the DEFINES variable instead\
 of directly in ASFLAGS. These must be specified without -D prepended)
 endif
 

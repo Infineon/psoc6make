@@ -17,6 +17,12 @@ The this release of the PSoC 6 GNU make Build System includes complete support f
 This also includes the getlibs.bash script that can be used directly, or via the make target to download additional git repo based libraries for the application.
 
 ### What Changed?
+#### v1.4.0
+* Improved compatibility with MTB 2.0 and 2.1 tools
+* Improved support for J-Link
+* Improved support for different toolchains in VSCode
+* Improved support for PSoC 64 based boards
+* Fixed issue with output formatting on Mac
 #### v1.3.1
 * Updated IAR to include '--threaded_lib' when building for FreeRTOS. This should make use of the clib-support library to ensure thread safe operation.
 #### v1.3.0

@@ -54,7 +54,10 @@ $(1)_shared_lib: | $$($(1)_SHAREDLIB_BUILD_LOCATION)/liblist.rsp
 $(1)_shared_lib: | $$($(1)_SHAREDLIB_BUILD_LOCATION)/artifact.rsp
 
 $(1)_shared_lib:
-	$(CY_NOISE)inclist_read=$$$$(cat $$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist.rsp | sed -e "s/I\.\//I$$($(1)_SED_PATTERN)\//g" | tr " " "\n"); \
+	$(CY_NOISE)touch $$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist.rsp \
+	$$($(1)_SHAREDLIB_BUILD_LOCATION)/liblist.rsp \
+	$$($(1)_SHAREDLIB_BUILD_LOCATION)/artifact.rsp; \
+	inclist_read=$$$$(cat $$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist.rsp | sed -e "s/I\.\//I$$($(1)_SED_PATTERN)\//g" | tr " " "\n"); \
 	if [ -f "$$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist_export.rsp" ]; then \
 		inclist_export_read=$$$$(cat $$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist_export.rsp | tr " " "\n"); \
 		if [[ "$$$$inclist_read" != "$$$$inclist_export_read" ]]; then \
@@ -109,7 +112,8 @@ $(1)_dependent_app: | dependent_apps_preprint
 	$$(info ==============================================================================)
 	$(CY_NOISE)$(CY_DEPAPP_MAKECMD) $(2)
 ifneq ($(CY_DEPAPP_CLEAN),1)
-	$(CY_NOISE)artifact_elf=$$$$(sed '1s;^;$$($(1)_DEPAPP_BUILD_LOCATION)/;' $$($(1)_DEPAPP_BUILD_LOCATION)/artifact.rsp); \
+	$(CY_NOISE)touch $$($(1)_DEPAPP_BUILD_LOCATION)/artifact.rsp; \
+	artifact_elf=$$$$(sed '1s;^;$$($(1)_DEPAPP_BUILD_LOCATION)/;' $$($(1)_DEPAPP_BUILD_LOCATION)/artifact.rsp); \
 	artifact_bare=$$$${artifact_elf%.elf}; \
 	artifact_bin=$$$$artifact_bare.bin; \
 	artifact_c=$$$$artifact_bare.c; \

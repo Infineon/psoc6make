@@ -29,6 +29,7 @@ ELEM_DEF = "define"
 ELEM_ASM_INC_PATH = "asmIncludePath"
 ELEM_ASM_DEFS = "asmDefines"
 ELEM_LINK_FILE = "linkerFile"
+ELEM_OVERRIDE = "override"
 ELEM_GROUP = "group"
 ELEM_FILES = "files"
 ELEM_LINK_OPTS = "linkerExtraOptions"
@@ -225,6 +226,8 @@ def generateIpcf(inFile, outFile):
 
     # Linker script file
     linkerFileElem = ElementTree.SubElement(root, ELEM_LINK_FILE)
+    linkerOverrideElem = ElementTree.SubElement(linkerFileElem, ELEM_OVERRIDE)
+    linkerOverrideElem.text = "true"
     linkerPathElem = ElementTree.SubElement(linkerFileElem, ELEM_PATH)
     linkerPathElem.text = cleanUpPath(projectData.linkerScript)
 

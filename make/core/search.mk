@@ -117,7 +117,7 @@ CY_SEARCH_EMPTY_DIRS:=$(filter-out $(CY_SEARCH_C_FILES) $(CY_SEARCH_S_FILES) $(C
 # Print the number of discovered files
 #
 ifneq ($(CY_SEARCH_EMPTY_DIRS),)
-$(error The application must not contain spaces in the paths. Detected dir(s): $(CY_SEARCH_EMPTY_DIRS))
+$(call CY_MACRO_ERROR,The application must not contain spaces in the paths. Detected dir(s): $(CY_SEARCH_EMPTY_DIRS))
 else
 $(info -> Found $(words $(CY_SEARCH_C_FILES)) .$(CY_TOOLCHAIN_SUFFIX_C) file(s))
 $(info -> Found $(words $(CY_SEARCH_S_FILES)) .$(CY_TOOLCHAIN_SUFFIX_S) file(s))

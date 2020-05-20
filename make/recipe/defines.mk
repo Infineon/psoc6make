@@ -39,7 +39,7 @@ CORE?=CM4
 CY_START_FLASH=0x10000000
 CY_START_SRAM=0x08000000
 
-CY_OPEN_bt_configurator_DEVICE=--device PSoC6 
+CY_OPEN_bt_configurator_DEVICE=--device PSoC6
 
 #
 # Core specifics
@@ -154,8 +154,8 @@ else ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_DIE_PSOC6A256K)))
 CY_PSOC_ARCH=psoc6_04
 CY_PSOC_DIE_NAME=PSoC6A256K
 CY_OPENOCD_DEVICE_CFG=psoc6_256k.cfg
-CY_JLINK_DEVICE_CFG_PROGRAM=CY8C6xx4_CM0p_tm
-CY_JLINK_DEVICE_CFG_ATTACH=CY8C6xx4_$(CY_JLINKSCRIPT_CORE)
+CY_JLINK_DEVICE_CFG_PROGRAM=CY8C6xx4_CM0p_sect128KB_tm
+CY_JLINK_DEVICE_CFG_ATTACH=CY8C6xx4_$(CY_JLINKSCRIPT_CORE)_sect128KB
 CY_JLINK_DEVICE_CFG_DEBUG=$(CY_JLINK_DEVICE_CFG_ATTACH)$(CY_JLINK_DEVICE_CFG_DEBUG_SUFFIX)
 
 else
@@ -354,7 +354,7 @@ CY_BSP_TEMPLATES_CMD=\
 	fi;
 endif
 
-# Command for updating the device(s) 
+# Command for updating the device(s)
 CY_BSP_DEVICES_CMD=\
 	designFile=$$($(CY_FIND) $(CY_TARGET_GEN_DIR) -name *.modus);\
 	if [[ $$designFile ]]; then\
@@ -394,21 +394,61 @@ endif
 # IDE specifics
 #
 
-CY_VSCODE_ARGS="s|&&ELFFILE&&|$(CY_CONFIG_DIR)/$(APPNAME).elf|g;"\
-				"s|&&HEXFILE&&|$(CY_CONFIG_DIR)/$(APPNAME).hex|g;"\
-				"s|&&PSOCFAMILY&&|$(CY_PSOC_ARCH)|g;"\
-				"s|&&MODUSSHELL&&|$(CY_MODUS_SHELL_DIR)|g;"\
-				"s|&&OPENOCDFILE&&|$(CY_OPENOCD_DEVICE_CFG)|g;"\
-				"s|&&SVDFILENAME&&|$(CY_OPENOCD_SVD_PATH)|g;"\
-				"s|&&MODUSTOOLCHAIN&&|$(subst ",,$(CY_CROSSPATH))|g;"\
-				"s|&&MODUSTOOLCHAINVERSION&&|$(subst ",,$(subst gcc-,,$(notdir $(CY_CROSSPATH))))|g;"\
-				"s|&&CFLAGS&&|$(CY_RECIPE_CFLAGS)|g;"\
-				"s|&&MODUSOPENOCD&&|$(CY_OPENOCD_DIR)|g;"\
-				"s|&&MODUSLIBMANAGER&&|$(CY_LIBRARY_MANAGER_DIR)|g;"\
-				"s|&&GDBPATH&&|$(CY_COMPILER_DIR)|g;"\
-				"s|&&DEVICEPROGRAM&&|$(CY_JLINK_DEVICE_CFG_PROGRAM)|g;"\
-				"s|&&DEVICEDEBUG&&|$(CY_JLINK_DEVICE_CFG_DEBUG)|g;"\
-				"s|&&DEVICEATTACH&&|$(CY_JLINK_DEVICE_CFG_ATTACH)|g;"
+CY_VSCODE_JSON_PROCESSING=\
+	if [[ $$jsonFile == "launch.json" ]]; then\
+		if [[ $(CY_OPENOCD_CHIP_NAME) == "psoc64" ]]; then\
+			grep -v "//PSoC6 Only//" $(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile >\
+				$(CY_VSCODE_OUT_TEMPLATE_PATH)/__$$jsonFile;\
+			sed -e 's/\/\/PSoC64 Only\/\///g' $(CY_VSCODE_OUT_TEMPLATE_PATH)/__$$jsonFile >\
+				$(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile;\
+		else\
+			grep -v "//PSoC64 Only//" $(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile >\
+				$(CY_VSCODE_OUT_TEMPLATE_PATH)/__$$jsonFile;\
+			sed -e 's/\/\/PSoC6 Only\/\///g' $(CY_VSCODE_OUT_TEMPLATE_PATH)/__$$jsonFile >\
+				$(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile;\
+		fi;\
+		rm $(CY_VSCODE_OUT_TEMPLATE_PATH)/__$$jsonFile;\
+	fi;
+
+CY_VSCODE_OPENOCD_PROCESSING=\
+	if [[ $(CY_OPENOCD_CHIP_NAME) == "psoc6" ]]; then\
+		grep -v "set TARGET_AP cm4_ap" $(CY_VSCODE_OUT_PATH)/openocd.tcl > $(CY_VSCODE_OUT_PATH)/_openocd.tcl;\
+		mv -f $(CY_VSCODE_OUT_PATH)/_openocd.tcl $(CY_VSCODE_OUT_PATH)/openocd.tcl;\
+	fi;\
+
+CY_GCC_VERSION=$(subst ",,$(subst gcc-,,$(notdir $(CY_CROSSPATH))))
+
+ifneq ($(CY_BUILD_LOCATION),)
+CY_ELF_FILE?=$(CY_INTERNAL_BUILD_LOC)/$(TARGET)/$(CONFIG)/$(APPNAME).elf
+CY_HEX_FILE?=$(CY_INTERNAL_BUILD_LOC)/$(TARGET)/$(CONFIG)/$(APPNAME).hex
+
+else
+CY_ELF_FILE?=./$(notdir $(CY_INTERNAL_BUILD_LOC))/$(TARGET)/$(CONFIG)/$(APPNAME).elf
+CY_HEX_FILE?=./$(notdir $(CY_INTERNAL_BUILD_LOC))/$(TARGET)/$(CONFIG)/$(APPNAME).hex
+
+endif
+
+CY_VSCODE_ARGS="s|&&CY_ELF_FILE&&|$(CY_ELF_FILE)|g;"\
+				"s|&&CY_HEX_FILE&&|$(CY_HEX_FILE)|g;"\
+				"s|&&CY_OPEN_OCD_FILE&&|$(CY_OPENOCD_DEVICE_CFG)|g;"\
+				"s|&&CY_SVD_FILE_NAME&&|$(CY_OPENOCD_SVD_PATH)|g;"\
+				"s|&&CY_MTB_PATH&&|$(CY_TOOLS_DIR)|g;"\
+				"s|&&CY_TOOL_CHAIN_DIRECTORY&&|$(subst ",,$(CY_CROSSPATH))|g;"\
+				"s|&&CY_ARM_TOOL_CHAIN_PATH&&|$$\{config:modustoolbox.toolsPath\}/gcc-$(CY_GCC_VERSION)/bin|g;"\
+				"s|&&CY_C_FLAGS&&|$(CY_RECIPE_CFLAGS)|g;"\
+				"s|&&CY_GCC_VERSION&&|$(CY_GCC_VERSION)|g;"\
+				"s|&&CY_GCC_DIRECTORY&&|gcc-$(CY_GCC_VERSION)|g;"\
+				"s|&&CY_DEVICE_PROGRAM&&|$(CY_JLINK_DEVICE_CFG_PROGRAM)|g;"\
+				"s|&&CY_DEVICE_DEBUG&&|$(CY_JLINK_DEVICE_CFG_DEBUG)|g;"\
+				"s|&&CY_DEVICE_ATTACH&&|$(CY_JLINK_DEVICE_CFG_ATTACH)|g;"
+
+ifeq ($(CORE),CM0P)
+CY_VSCODE_ARGS+="s|&&CY_TARGET_PROCESSOR_NAME&&|CM0+|g;"\
+                "s|&&CY_TARGET_PROCESSOR_NUMBER&&|0|g;"
+else
+CY_VSCODE_ARGS+="s|&&CY_TARGET_PROCESSOR_NAME&&|CM4|g;"\
+                "s|&&CY_TARGET_PROCESSOR_NUMBER&&|1|g;"
+endif
 
 CY_ECLIPSE_ARGS="s|&&CY_OPENOCD_CFG&&|$(CY_OPENOCD_DEVICE_CFG)|g;"\
 				"s|&&CY_OPENOCD_CHIP&&|$(CY_OPENOCD_CHIP_NAME)|g;"\

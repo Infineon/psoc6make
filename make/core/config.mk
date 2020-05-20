@@ -96,11 +96,19 @@ CY_CONFIG_LIBFILE=--library $(CY_INTERNAL_DEVICESUPPORT_PATH)/devicesupport.xml
 endif
 
 CY_CONFIG_MODUS_EXEC=$(CY_CFG_BACKEND_CLI_DIR)/cfg-backend-cli
+
+ifneq ($(notdir $(CY_TOOLS_DIR)),tools_2.0)
 CY_CONFIG_MODUS_EXEC_FLAGS=\
 	$(CY_CONFIG_LIBFILE)\
 	--build $(CY_CONFIG_MODUS_FILE)\
 	--check-mcu=$(DEVICE)\
 	--check-coprocessors=$(subst $(CY_SPACE),$(CY_COMMA),$(ADDITIONAL_DEVICES))
+else
+CY_CONFIG_MODUS_EXEC_FLAGS=\
+	$(CY_CONFIG_LIBFILE)\
+	--build $(CY_CONFIG_MODUS_FILE)\
+	--set-device=$(subst $(CY_SPACE),$(CY_COMMA),$(DEVICE) $(ADDITIONAL_DEVICES))
+endif
 
 CY_CONFIG_MODUS_GUI=$(CY_DEVICE_CONFIGURATOR_DIR)/device-configurator
 CY_CONFIG_MODUS_GUI_FLAGS=\

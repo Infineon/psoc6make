@@ -63,7 +63,7 @@ CY_OPEN_project_creator_TOOL_NEWCFG_FLAGS=
 # Verify that the tool is supported
 ifneq ($(CY_OPEN_TYPE),)
 ifeq ($(filter $(CY_OPEN_TYPE),$(CY_OPEN_TYPE_LIST)),)
-$(error Unsupported tool type - $(CY_OPEN_TYPE). $(CY_NEWLINE)Supported types are: $(CY_OPEN_TYPE_LIST))
+$(call CY_MACRO_ERROR,Unsupported tool type - $(CY_OPEN_TYPE). $(CY_NEWLINE)Supported types are: $(CY_OPEN_TYPE_LIST))
 endif
 endif
 
@@ -81,6 +81,19 @@ endif
 ifneq ($(filter get_app_info open,$(MAKECMDGOALS)),)
 
 # Look for tools that DISALLOW new configurations
+ifeq ($(CY_SHELL_TYPE),shell)
+CY_OPEN_NEWCFG_XML_TYPES+=$(shell \
+	xmlFileArray=($$($(CY_FIND) $(CY_INTERNAL_TOOLS) -maxdepth 2 -name "configurator.xml" \
+					-exec grep "<new_configuration_enabled>false</new_configuration_enabled>" {} +));\
+	for xmlFile in "$${xmlFileArray[@]}"; do\
+		if [[ "$$xmlFile" == *"configurator.xml"* ]]; then\
+			toolNameDir="$${xmlFile%/*}";\
+			toolName="$${toolNameDir##*/}";\
+			echo "$$toolName";\
+		fi;\
+	done;\
+)
+else
 CY_OPEN_NEWCFG_XML_TYPES+=$(shell \
 	xmlFileArray=($$($(CY_FIND) $(CY_INTERNAL_TOOLS) -maxdepth 2 -name "configurator.xml" \
 					-exec grep "<new_configuration_enabled>false</new_configuration_enabled>" {} +));\
@@ -92,6 +105,8 @@ CY_OPEN_NEWCFG_XML_TYPES+=$(shell \
 		fi;\
 	done;\
 )
+
+endif
 
 endif
 
@@ -138,11 +153,11 @@ endif
 open:
 ifeq ($(CY_OPEN_FILE),)
 ifeq ($(CY_OPEN_TYPE),)
-	$(error Neither tool type or file specified to launch a tool)
+	$(call CY_MACRO_ERROR,Neither tool type or file specified to launch a tool)
 endif
 endif
 ifeq ($(CY_OPEN_TOOL_LAUNCH),)
-	$(error Unable to find a default tool to launch .$(CY_OPEN_EXT) file extension)
+	$(call CY_MACRO_ERROR,Unable to find a default tool to launch .$(CY_OPEN_EXT) file extension)
 endif
 ifeq ($(CY_OPEN_TOOL_FILE),)
 	$(info Launching $(notdir $(CY_OPEN_TOOL_LAUNCH)) tool for a new configuration)

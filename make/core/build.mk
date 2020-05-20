@@ -69,7 +69,7 @@ $(2)_EXPLICIT_COMPILE_ARGS=$(CY_BUILD_COMPILE_EXPLICIT_C)
 else ifeq ($$($(2)_SUFFIX),.$(CY_TOOLCHAIN_SUFFIX_CPP))
 $(2)_EXPLICIT_COMPILE_ARGS=$(CY_BUILD_COMPILE_EXPLICIT_CPP)
 else
-$$(error Incompatible source file type encountered while constructing explicit rule: $(1))
+$$(call CY_MACRO_ERROR,Incompatible source file type encountered while constructing explicit rule: $(1))
 endif
 
 $(CY_CONFIG_DIR)/$(2) : $(1)
@@ -214,15 +214,25 @@ CY_BUILD_DIRS=$(sort $(call CY_MACRO_DIR,$(CY_BUILD_ALL_OBJ_FILES)) $(call CY_MA
 # Check Windows path length limit for build directories
 #
 ifeq ($(OS),Windows_NT)
+
+ifeq ($(CY_SHELL_TYPE),shell)
+CY_BUILD_CHECK_STRLEN:=$(shell \
+	for directory in $(CY_BUILD_DIRS); do\
+		if [ "$${#directory}" -ge 260 ]; then\
+			echo "$$directory";\
+		fi;\
+	done)
+else 
 CY_BUILD_CHECK_STRLEN:=$(shell \
 	for directory in $(CY_BUILD_DIRS); do\
 		if [ "$${\#directory}" -ge 260 ]; then\
 			echo "$$directory";\
 		fi;\
 	done)
+endif
 
 ifneq ($(strip $(CY_BUILD_CHECK_STRLEN)),)
-$(error Detected path(s) that exceed the Windows path length: $(CY_BUILD_CHECK_STRLEN))
+$(call CY_MACRO_ERROR,Detected path(s) that exceed the Windows path length: $(CY_BUILD_CHECK_STRLEN))
 endif
 endif
 

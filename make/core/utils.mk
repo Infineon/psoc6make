@@ -54,8 +54,8 @@ CY_COMPONENT_LIST?=$(sort $(filter-out $(DISABLE_COMPONENTS),$(CY_COMPONENT_LIST
 ################################################################################
 
 # Create a make variable that contains a space
-CY_SPACE:= 
-CY_SPACE+=
+CY_EMPTY:=
+CY_SPACE:=$(EMPTY) $(CY_EMPTY)
 
 # Create a make variable that contains a soft tab
 CY_INDENT:=$(CY_SPACE)$(CY_SPACE)$(CY_SPACE)$(CY_SPACE)
@@ -76,6 +76,19 @@ CY_CMD_TERM:=
 else
 CY_NOISE:=@
 CY_CMD_TERM:= > /dev/null 2>&1
+endif
+
+# Extract the make version number
+CY_MAKE_MAJOR_VERSION=$(basename $(MAKE_VERSION))
+CY_MAKE_MINOR_VERSION=$(suffix $(MAKE_VERSION))
+
+# GNU make v4.3 and higher interprets "#" symbols differently.
+# Prior to this, it needed an escape character (in shell function) as it is interpreted as a comment.
+CY_SHELL_TYPE=make
+ifeq ($(strip $(filter 3 2 1,$(CY_MAKE_MAJOR_VERSION))),)
+ifeq ($(strip $(filter .2% .1% .0%,$(CY_MAKE_MINOR_VERSION))),)
+CY_SHELL_TYPE=shell
+endif
 endif
 
 
@@ -216,7 +229,7 @@ CY_DEVICESUPPORT_SEARCH_PATH:=$(call CY_MACRO_SEARCH,devicesupport.xml,$(CY_INTE
 
 bsp:
 ifeq ($(TARGET_GEN),)
-	$(error TARGET_GEN variable must be specified to generate a BSP)
+	$(call CY_MACRO_ERROR,TARGET_GEN variable must be specified to generate a BSP)
 else
 	$(info $(CY_NEWLINE)Creating $(TARGET_GEN) TARGET from $(TARGET)...)
 	$(CY_NOISE)if [ -d $(CY_TARGET_GEN_DIR) ]; then\
@@ -381,7 +394,7 @@ CY_TOOLS_LIST+=bash git find ls cp mkdir rm cat sed awk perl file whereis
 
 check:
 	$(info )
-	$(foreach tool,$(CY_TOOLS_LIST),$(if $(shell which $(tool)),,$(error "$(tool) was not found in user's PATH")))
+	$(foreach tool,$(CY_TOOLS_LIST),$(if $(shell which $(tool)),,$(call CY_MACRO_ERROR,"$(tool) was not found in user's PATH")))
 	$(CY_NOISE)if [ ! -d $(CY_BT_CONFIGURATOR_DIR) ]; then toolsTest+=("bt-configurator could not be found"); fi;\
 	if [ ! -d $(CY_CAPSENSE_CONFIGURATOR_DIR) ]; then toolsTest+=("capsense-configurator could not be found"); fi;\
 	if [ ! -d $(CY_CFG_BACKEND_CLI_DIR) ]; then toolsTest+=("cfg-backend-cli could not be found"); fi;\

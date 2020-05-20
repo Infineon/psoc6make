@@ -201,7 +201,7 @@ CY_IAR_ALL_LIBS_QUOTED=$(foreach onedef,$(CY_IAR_ALL_LIB_FILES),\"$(onedef)\",)
 
 ewarm8: CY_IDE_preprint
 ifneq ($(TOOLCHAIN), IAR)
-	$(error Unable to proceed. TOOLCHAIN must be set to IAR. Use TOOLCHAIN=IAR on the command line, or edit the Makefile)
+	$(call CY_MACRO_ERROR,Unable to proceed. TOOLCHAIN must be set to IAR. Use TOOLCHAIN=IAR on the command line, or edit the Makefile)
 endif
 	$(CY_NOISE)mkdir -p $(CY_CONFIG_DIR);\
 	echo $(CY_IDE_PRJNAME) > $(CY_IAR_TEMPFILE);\
@@ -275,7 +275,7 @@ uvision5: CY_IDE_preprint
 ifeq ($(TOOLCHAIN), GCC_ARM)
 	$(CY_NOISE)echo WARNING: GCC support in Keil uVision is experimental. To use ARM Compiler 6, run: make uvision5 TOOLCHAIN=ARM.
 else ifneq ($(TOOLCHAIN), ARM)
-	$(error Unable to proceed. TOOLCHAIN must be set to ARM. Use TOOLCHAIN=ARM on the command line, or edit the Makefile)
+	$(call CY_MACRO_ERROR,Unable to proceed. TOOLCHAIN must be set to ARM. Use TOOLCHAIN=ARM on the command line, or edit the Makefile)
 endif
 	$(CY_NOISE)mkdir -p $(CY_CONFIG_DIR);\
 	echo $(CY_IDE_PRJNAME) > $(CY_CMSIS_TEMPFILE);\
@@ -326,42 +326,56 @@ ifeq ($(LIBNAME),)
 	echo $(CY_VSCODE_ARGS) > $(CY_VSCODE_TEMPFILE);\
 	echo "s|&&JSONINCLUDELIST&&|$(foreach onedef,$(subst -I,,$(CY_RECIPE_INCLUDES)),\"$(onedef)\",)|" >> $(CY_VSCODE_TEMPFILE);\
 	echo "s|&&JSONDEFINELIST&&|$(foreach onedef,$(subst -D,,$(CY_RECIPE_DEFINES)),\"$(onedef)\",)|" >> $(CY_VSCODE_TEMPFILE);\
+	echo;\
 	for json in $(CY_VSCODE_TEMPLATE_PATH)/*; do\
 		jsonFile="$${json##*/}";\
 		if [[ $$jsonFile == *"c_cpp_properties"* ]] && [[ $$jsonFile != *"c_cpp_properties_$(TOOLCHAIN).json" ]]; then\
 			continue;\
 		fi;\
 		sed -f $(CY_VSCODE_TEMPFILE) $(CY_VSCODE_TEMPLATE_PATH)/$$jsonFile > $(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile;\
+		if [[ $$jsonFile == *"c_cpp_properties_$(TOOLCHAIN).json" ]]; then\
+			jsonFile="c_cpp_properties.json";\
+			mv $(CY_VSCODE_OUT_TEMPLATE_PATH)/c_cpp_properties_$(TOOLCHAIN).json $(CY_VSCODE_OUT_TEMPLATE_PATH)/c_cpp_properties.json;\
+		fi;\
+		$(CY_VSCODE_JSON_PROCESSING)\
 		jsonFiles="$$jsonFiles $$jsonFile";\
 		if [ -f $(CY_VSCODE_OUT_PATH)/$$jsonFile ] && [[ $$jsonFile == *"settings.json" ]]; then\
-			echo;\
 			echo "Modifying existing settings.json file. Check against the backup copy in .vscode/backup";\
 			mv -f $(CY_VSCODE_OUT_PATH)/$$jsonFile $(CY_VSCODE_BACKUP_PATH)/$$jsonFile;\
 			sed -e 's/\/bin\/openocd\"/\/bin\/openocd\",/g' $(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile |\
-				grep -v -e "}" > $(CY_VSCODE_OUT_PATH)/$$jsonFile;\
-			sed -e '/cortex-debug.armToolchainPath/d' -e '/cortex-debug.openocdPath/d' -e '/^{/d'\
-				$(CY_VSCODE_BACKUP_PATH)/$$jsonFile >> $(CY_VSCODE_OUT_PATH)/$$jsonFile;\
+				grep -v -e "^}" > $(CY_VSCODE_OUT_PATH)/$$jsonFile;\
+			sed -e '/^{/d'\
+			    -e '/\/\/mtb\/\//d'\
+			    -e '/modustoolbox.toolsPath/d'\
+			    -e '/cortex-debug.armToolchainPath/d'\
+			    -e '/cortex-debug.openocdPath/d'\
+			    $(CY_VSCODE_BACKUP_PATH)/$$jsonFile >> $(CY_VSCODE_OUT_PATH)/$$jsonFile;\
 		else\
+			if [ -f $(CY_VSCODE_OUT_PATH)/$$jsonFile ]; then\
+				echo "The existing $$jsonFile file has been saved to .vscode/backup";\
+				mv -f $(CY_VSCODE_OUT_PATH)/$$jsonFile $(CY_VSCODE_BACKUP_PATH)/$$jsonFile;\
+			fi;\
 			cp $(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile $(CY_VSCODE_OUT_PATH)/$$jsonFile;\
 		fi;\
 	done;\
-	mv $(CY_VSCODE_OUT_PATH)/c_cpp_properties_$(TOOLCHAIN).json $(CY_VSCODE_OUT_PATH)/c_cpp_properties.json;\
+	$(CY_VSCODE_OPENOCD_PROCESSING)\
 	mv $(CY_VSCODE_OUT_PATH)/openocd.tcl $(CY_INTERNAL_APP_PATH)/openocd.tcl;\
 	rm $(CY_VSCODE_TEMPFILE);\
 	rm -rf $(CY_VSCODE_OUT_TEMPLATE_PATH);\
 	echo;\
 	echo Generated Visual Studio Code files: $$jsonFiles;\
 	echo;\
-	echo J-Link users, please see the comments at the top of the launch.json;\
-	echo    file about setting the location of the gdb-server.;\
+	echo "J-Link users, please see the comments at the top of the launch.json";\
+	echo "   file about setting the location of the gdb-server.";\
 	echo;\
 	echo "Instructions:";\
-	echo "1. Open VSCode";\
-	echo "2. Install \"C/C++\" and \"Cortex-Debug\" extensions";\
-	echo "3. File->Open Folder (Welcome page->Start->Open folder)";\
-	echo "4. Select the app root directory and open";\
-	echo "5. Builds: Terminal->Run Task";\
-	echo "6. Debugging: \"Bug icon\" on the left-hand pane";\
+	echo "1. Review the modustoolbox.toolsPath property in .vscode/settings.json";\
+	echo "2. Open VSCode";\
+	echo "3. Install \"C/C++\" and \"Cortex-Debug\" extensions";\
+	echo "4. File->Open Folder (Welcome page->Start->Open folder)";\
+	echo "5. Select the app root directory and open";\
+	echo "6. Builds: Terminal->Run Task";\
+	echo "7. Debugging: \"Bug icon\" on the left-hand pane";\
 	echo;
 else
 	$(CY_NOISE)echo

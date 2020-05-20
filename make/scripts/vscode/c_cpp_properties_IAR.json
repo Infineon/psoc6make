@@ -4,16 +4,16 @@
             "name": "Win32",
             "includePath": [
                 &&JSONINCLUDELIST&&
-                "&&MODUSTOOLCHAIN&&/inc/asm",
-                "&&MODUSTOOLCHAIN&&/inc/c",
-                "&&MODUSTOOLCHAIN&&/inc/cpp"
+                "&&CY_TOOL_CHAIN_DIRECTORY&&/inc/asm",
+                "&&CY_TOOL_CHAIN_DIRECTORY&&/inc/c",
+                "&&CY_TOOL_CHAIN_DIRECTORY&&/inc/cpp"
             ],
             "browse": {
                 "path": [
-	                &&JSONINCLUDELIST&&
-                    "&&MODUSTOOLCHAIN&&/inc/asm",
-                    "&&MODUSTOOLCHAIN&&/inc/c",
-                    "&&MODUSTOOLCHAIN&&/inc/cpp"
+                    &&JSONINCLUDELIST&&
+                    "&&CY_TOOL_CHAIN_DIRECTORY&&/inc/asm",
+                    "&&CY_TOOL_CHAIN_DIRECTORY&&/inc/c",
+                    "&&CY_TOOL_CHAIN_DIRECTORY&&/inc/cpp"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -339,8 +339,8 @@
                 "__nounwind=",
                 "__VERSION__=IAR"
             ],
-            "intelliSenseMode": "msvc-x64",
-            "compilerPath": "&&MODUSTOOLCHAIN&&/bin/iccarm.exe &&CFLAGS&&",
+            "intelliSenseMode": "${default}",
+            "compilerPath": "&&CY_TOOL_CHAIN_DIRECTORY&&/bin/iccarm.exe &&CY_C_FLAGS&&",
             "cStandard": "c99",
             "cppStandard": "c++11"
         }
