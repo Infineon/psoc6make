@@ -51,7 +51,7 @@
                 "monitor psoc6 reset_halt sysresetreq"//PSoC6 Only//
                 "monitor reset init"//PSoC64 Only//
             ],
-            "numberOfProcessors": 2,//PSoC6 Only//
+            "numberOfProcessors": &&CY_PROCESSOR_COUNT&&,//PSoC6 Only//
             "targetProcessor": &&CY_TARGET_PROCESSOR_NUMBER&&,//PSoC6 Only//  // Set to 0 for the CM0+, set to 1 for the CM4
             "postStartSessionCommands": [       // Needed if runToMain is false
                 // Following two commands are needed to get gdb and openocd and HW all in sync.
@@ -107,7 +107,7 @@
                 "-enable-pretty-printing",
                 "monitor halt"
             ],
-            "numberOfProcessors": 2,//PSoC6 Only//
+            "numberOfProcessors": &&CY_PROCESSOR_COUNT&&,//PSoC6 Only//
             "targetProcessor": &&CY_TARGET_PROCESSOR_NUMBER&&,//PSoC6 Only//  // Set to 0 for the CM0+, set to 1 for the CM4
             "overrideRestartCommands": [
                 "monitor reset init",
@@ -136,6 +136,9 @@
             "searchDir": [
                 "${workspaceRoot}",
                 "${config:modustoolbox.toolsPath}/openocd/scripts/"
+            ],
+            "openOCDPreConfigLaunchCommands": [
+                "set DISABLE_SMIF 1"
             ],
             "configFiles": [
                 "openocd.tcl"

@@ -17,6 +17,9 @@ The this release of the PSoC 6 GNU make Build System includes complete support f
 This also includes the getlibs.bash script that can be used directly, or via the make target to download additional git repo based libraries for the application.
 
 ### What Changed?
+#### v1.4.1
+* Added support for PSoC 6 S2 & S3 single core devices
+* Fixed timing problem starting debugger for some PSoC 64 parts
 #### v1.4.0
 * Improved compatibility with MTB 2.0 and 2.1 tools
 * Improved support for J-Link
