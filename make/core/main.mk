@@ -94,6 +94,9 @@ eclipse vscode ewarm8 uvision5: secondstage
 # Applicable for both first and second build stages
 ################################################################################
 
+# Backwards-compatibility variables
+include $(CY_BASELIB_CORE_PATH)/make/core/bwc.mk
+
 ##########################
 # Paths
 ##########################

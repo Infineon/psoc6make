@@ -412,6 +412,8 @@ endif
 # IDE specifics
 #
 
+ifeq ($(filter vscode,$(MAKECMDGOALS)),vscode)
+
 CY_VSCODE_JSON_PROCESSING=\
 	if [[ $$jsonFile == "launch.json" ]]; then\
 		if [[ $(CY_OPENOCD_CHIP_NAME) == "psoc64" ]]; then\
@@ -438,7 +440,9 @@ CY_VSCODE_OPENOCD_PROCESSING=\
 		mv -f $(CY_VSCODE_OUT_PATH)/_openocd.tcl $(CY_VSCODE_OUT_PATH)/openocd.tcl;\
 	fi;\
 
-CY_GCC_VERSION=$(subst ",,$(subst gcc-,,$(notdir $(CY_CROSSPATH))))
+
+CY_GCC_BASE_DIR=$(subst $(CY_INTERNAL_TOOLS)/,,$(CY_INTERNAL_TOOL_gcc_BASE))
+CY_GCC_VERSION=$(shell $(CY_INTERNAL_TOOL_arm-none-eabi-gcc_EXE) -dumpversion)
 
 ifneq ($(CY_BUILD_LOCATION),)
 CY_ELF_FILE?=$(CY_INTERNAL_BUILD_LOC)/$(TARGET)/$(CONFIG)/$(APPNAME).elf
@@ -456,13 +460,19 @@ CY_VSCODE_ARGS="s|&&CY_ELF_FILE&&|$(CY_ELF_FILE)|g;"\
 				"s|&&CY_SVD_FILE_NAME&&|$(CY_OPENOCD_SVD_PATH)|g;"\
 				"s|&&CY_MTB_PATH&&|$(CY_TOOLS_DIR)|g;"\
 				"s|&&CY_TOOL_CHAIN_DIRECTORY&&|$(subst ",,$(CY_CROSSPATH))|g;"\
-				"s|&&CY_ARM_TOOL_CHAIN_PATH&&|$$\{config:modustoolbox.toolsPath\}/gcc-$(CY_GCC_VERSION)/bin|g;"\
 				"s|&&CY_C_FLAGS&&|$(CY_RECIPE_CFLAGS)|g;"\
 				"s|&&CY_GCC_VERSION&&|$(CY_GCC_VERSION)|g;"\
-				"s|&&CY_GCC_DIRECTORY&&|gcc-$(CY_GCC_VERSION)|g;"\
 				"s|&&CY_DEVICE_PROGRAM&&|$(CY_JLINK_DEVICE_CFG_PROGRAM)|g;"\
 				"s|&&CY_DEVICE_DEBUG&&|$(CY_JLINK_DEVICE_CFG_DEBUG)|g;"\
 				"s|&&CY_DEVICE_ATTACH&&|$(CY_JLINK_DEVICE_CFG_ATTACH)|g;"
+
+ifeq ($(CY_USE_CUSTOM_GCC),true)
+CY_VSCODE_ARGS+="s|&&CY_GCC_BIN_DIR&&|$(CY_INTERNAL_TOOL_gcc_BASE)/bin|g;"\
+ 				"s|&&CY_GCC_DIRECTORY&&|$(CY_INTERNAL_TOOL_gcc_BASE)|g;"
+else
+CY_VSCODE_ARGS+="s|&&CY_GCC_BIN_DIR&&|$$\{config:modustoolbox.toolsPath\}/$(CY_GCC_BASE_DIR)/bin|g;"\
+ 				"s|&&CY_GCC_DIRECTORY&&|$$\{config:modustoolbox.toolsPath\}/$(CY_GCC_BASE_DIR)|g;"
+endif
 
 ifeq ($(CORE),CM0P)
 CY_VSCODE_ARGS+="s|&&CY_TARGET_PROCESSOR_NAME&&|CM0+|g;"\
@@ -477,6 +487,7 @@ else
 CY_VSCODE_ARGS+="s|&&CY_TARGET_PROCESSOR_NAME&&|CM4|g;"\
 				"s|&&CY_TARGET_PROCESSOR_NUMBER&&|1|g;"\
 				"s|&&CY_PROCESSOR_COUNT&&|2|g;"
+endif
 endif
 endif
 

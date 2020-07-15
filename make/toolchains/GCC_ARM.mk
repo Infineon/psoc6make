@@ -95,15 +95,24 @@ CY_TOOLCHAIN_COMMON_FLAGS=\
 	-ffat-lto-objects\
 	-g\
 	-Wall
-    
+
 #
 # CPU core specifics
 #
-ifeq ($(CORE),CM0P)
-CY_TOOLCHAIN_FLAGS_CORE=-mcpu=cortex-m0plus
+# NOTE: NewLib Nano leaks file buffers when used with reentrant support. Only use it in small
+# devices that are not likely being run with an RTOS.
+#
+ifeq ($(CORE),CM0)
+CY_TOOLCHAIN_NEWLIBNANO=--specs=nano.specs
+CY_TOOLCHAIN_FLAGS_CORE=-mcpu=cortex-m0 $(CY_TOOLCHAIN_NEWLIBNANO)
 CY_TOOLCHAIN_VFP_FLAGS=
-else
-CY_TOOLCHAIN_FLAGS_CORE=-mcpu=cortex-m4
+else ifeq ($(CORE),CM0P)
+CY_TOOLCHAIN_NEWLIBNANO=--specs=nano.specs
+CY_TOOLCHAIN_FLAGS_CORE=-mcpu=cortex-m0plus $(CY_TOOLCHAIN_NEWLIBNANO)
+CY_TOOLCHAIN_VFP_FLAGS=
+else ifeq ($(CORE),CM4)
+CY_TOOLCHAIN_NEWLIBNANO=
+CY_TOOLCHAIN_FLAGS_CORE=-mcpu=cortex-m4 $(CY_TOOLCHAIN_NEWLIBNANO)
 ifeq ($(VFP_SELECT),hardfp)
 CY_TOOLCHAIN_VFP_FLAGS=-mfloat-abi=hard -mfpu=fpv4-sp-d16
 else
@@ -145,8 +154,6 @@ CY_TOOLCHAIN_LDFLAGS=\
 	$(CY_TOOLCHAIN_FLAGS_CORE)\
 	$(CY_TOOLCHAIN_VFP_FLAGS)\
 	$(CY_TOOLCHAIN_COMMON_FLAGS)\
-	--enable-objc-gc\
-	--specs=nano.specs\
 	-Wl,--gc-sections
 
 #

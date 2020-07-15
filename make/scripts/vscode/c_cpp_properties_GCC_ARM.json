@@ -4,22 +4,22 @@
             "name": "Win32",
             "includePath": [
                 &&JSONINCLUDELIST&&
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include-fixed",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/arm-none-eabi/thumb/v7e-m/fpv4-sp/hard",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/backward"
+                "&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include",
+                "&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include-fixed",
+                "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include",
+                "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&",
+                "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/arm-none-eabi/thumb/v7e-m/fpv4-sp/hard",
+                "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/backward"
             ],
             "browse": {
                 "path": [
                     &&JSONINCLUDELIST&&
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include-fixed",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/arm-none-eabi/thumb/v7e-m/fpv4-sp/hard",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/backward"
+                    "&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include",
+                    "&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include-fixed",
+                    "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include",
+                    "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&",
+                    "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/arm-none-eabi/thumb/v7e-m/fpv4-sp/hard",
+                    "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/backward"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -29,7 +29,7 @@
                 "__GNUC__"
             ],
             "intelliSenseMode": "${default}",
-            "compilerPath": "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/bin/arm-none-eabi-gcc.exe &&CY_C_FLAGS&&",
+            "compilerPath": "&&CY_GCC_DIRECTORY&&/bin/arm-none-eabi-gcc.exe &&CY_C_FLAGS&&",
             "cStandard": "c99",
             "cppStandard": "c++11"
         },
@@ -37,22 +37,22 @@
             "name": "macOS",
             "includePath": [
                 &&JSONINCLUDELIST&&
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include-fixed",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/arm-none-eabi/thumb/v7e-m/fpv4-sp/hard",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/backward"
+                "&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include",
+                "&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include-fixed",
+                "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include",
+                "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&",
+                "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/arm-none-eabi/thumb/v7e-m/fpv4-sp/hard",
+                "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/backward"
             ],
             "browse": {
                 "path": [
                     &&JSONINCLUDELIST&&
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include-fixed",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/arm-none-eabi/thumb/v7e-m/fpv4-sp/hard",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/backward"
+                    "&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include",
+                    "&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include-fixed",
+                    "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include",
+                    "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&",
+                    "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/arm-none-eabi/thumb/v7e-m/fpv4-sp/hard",
+                    "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/backward"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -62,7 +62,7 @@
                 "__GNUC__"
             ],
             "intelliSenseMode": "${default}",
-            "compilerPath": "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/bin/arm-none-eabi-gcc &&CY_C_FLAGS&&",
+            "compilerPath": "&&CY_GCC_DIRECTORY&&/bin/arm-none-eabi-gcc &&CY_C_FLAGS&&",
             "cStandard": "c99",
             "cppStandard": "c++11"
         },
@@ -70,22 +70,22 @@
             "name": "Linux",
             "includePath": [
                 &&JSONINCLUDELIST&&
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include-fixed",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/arm-none-eabi/thumb/v7e-m/fpv4-sp/hard",
-                "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/backward"
+                "&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include",
+                "&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include-fixed",
+                "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include",
+                "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&",
+                "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/arm-none-eabi/thumb/v7e-m/fpv4-sp/hard",
+                "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/backward"
             ],
             "browse": {
                 "path": [
                     &&JSONINCLUDELIST&&
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include-fixed",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/arm-none-eabi/thumb/v7e-m/fpv4-sp/hard",
-                    "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/backward"
+                    "&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include",
+                    "&&CY_GCC_DIRECTORY&&/lib/gcc/arm-none-eabi/&&CY_GCC_VERSION&&/include-fixed",
+                    "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include",
+                    "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&",
+                    "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/arm-none-eabi/thumb/v7e-m/fpv4-sp/hard",
+                    "&&CY_GCC_DIRECTORY&&/arm-none-eabi/include/c++/&&CY_GCC_VERSION&&/backward"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -95,7 +95,7 @@
                 "__GNUC__"
             ],
             "intelliSenseMode": "${default}",
-            "compilerPath": "${config:modustoolbox.toolsPath}/&&CY_GCC_DIRECTORY&&/bin/arm-none-eabi-gcc &&CY_C_FLAGS&&",
+            "compilerPath": "&&CY_GCC_DIRECTORY&&/bin/arm-none-eabi-gcc &&CY_C_FLAGS&&",
             "cStandard": "c99",
             "cppStandard": "c++11"
         }

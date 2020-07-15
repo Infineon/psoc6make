@@ -11,6 +11,6 @@
     //mtb//      Linux  : $HOME/.config/Code/User/settings.json
     //mtb//
     "modustoolbox.toolsPath": "&&CY_MTB_PATH&&",
-    "cortex-debug.armToolchainPath": "&&CY_ARM_TOOL_CHAIN_PATH&&",
+    "cortex-debug.armToolchainPath": "&&CY_GCC_BIN_DIR&&",
     "cortex-debug.openocdPath": "${config:modustoolbox.toolsPath}/openocd/bin/openocd"
 }
