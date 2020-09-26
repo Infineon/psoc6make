@@ -27,21 +27,17 @@ ifeq ($(WHICHFILE),true)
 $(info Processing $(lastword $(MAKEFILE_LIST)))
 endif
 
+include $(CY_INTERNAL_BASELIB_PATH)/make/recipe/program_common.mk
 
-CY_GDB_CLIENT=$(CY_COMPILER_DIR)/bin/arm-none-eabi-gdb
 CY_GDB_ARGS=$(CY_INTERNAL_BASELIB_PATH)/make/scripts/$(CY_GDBINIT_FILE)
 
 ifeq ($(TOOLCHAIN),A_Clang)
 CY_OPENOCD_PROGRAM_IMG=$(CY_CONFIG_DIR)/$(APPNAME).bin $(TOOLCHAIN_VECT_BASE_CM4)
 else
-CY_OPENOCD_SYMBOL_IMG=$(CY_CONFIG_DIR)/$(APPNAME).elf
-CY_OPENOCD_PROGRAM_IMG=$(CY_CONFIG_DIR)/$(APPNAME).hex
+CY_OPENOCD_SYMBOL_IMG=$(CY_CONFIG_DIR)/$(APPNAME).$(CY_TOOLCHAIN_SUFFIX_TARGET)
+CY_OPENOCD_PROGRAM_IMG=$(CY_CONFIG_DIR)/$(APPNAME).$(CY_TOOLCHAIN_SUFFIX_PROGRAM)
 endif
 
-CY_OPENOCD_SCRIPTS=-s $(CY_OPENOCD_DIR)/scripts
-CY_OPENOCD_QSPI=-s $(CY_OPENOCD_QSPI_CFG_PATH)
-CY_OPENOCD_INTERFACE=source [find interface/kitprog3.cfg];
-CY_OPENOCD_TARGET=source [find target/$(CY_OPENOCD_DEVICE_CFG)];
 ifeq (,$(findstring CYB0,$(DEVICE)))
 CY_OPENOCD_CUSTOM_COMMAND?=psoc6 allow_efuse_program off;
 endif
@@ -56,46 +52,3 @@ CY_OPENOCD_PROGRAM_ARGS=$(CY_OPENOCD_SCRIPTS) $(CY_OPENOCD_QSPI) -c \
 					"$(CY_OPENOCD_INTERFACE) $(CY_OPENOCD_CM0_DISABLE_FLAG); $(CY_OPENOCD_TARGET) $(CY_OPENOCD_CUSTOM_COMMAND) $(CY_OPENOCD_PROGRAM)"
 CY_OPENOCD_DEBUG_ARGS=$(CY_OPENOCD_SCRIPTS) $(CY_OPENOCD_QSPI) -c \
 					"$(CY_OPENOCD_INTERFACE) $(CY_OPENOCD_CM0_DISABLE_FLAG); $(CY_OPENOCD_TARGET) $(CY_OPENOCD_CUSTOM_COMMAND) $(CY_OPENOCD_DEBUG)"
-
-erase:
-	$(CY_NOISE)echo;\
-	echo "Erasing target device... ";\
-	$(CY_OPENOCD_DIR)/bin/openocd $(CY_OPENOCD_ERASE_ARGS)
-
-program: build qprogram
-
-qprogram: memcalc
-ifeq ($(LIBNAME),)
-	$(CY_NOISE)echo;\
-	echo "Programming target device... ";\
-	$(CY_OPENOCD_DIR)/bin/openocd $(CY_OPENOCD_PROGRAM_ARGS)
-else
-	$(CY_NOISE)echo "Library application detected. Skip programming... ";\
-	echo
-endif
-
-debug: program qdebug
-
-qdebug: qprogram
-ifeq ($(LIBNAME),)
-	$(CY_NOISE)echo;\
-	echo ==============================================================================;\
-	echo "Instruction:";\
-	echo "Open a separate shell and run the attach target (make attach)";\
-	echo "to start the GDB client. Then use the GDB commands to debug.";\
-	echo ==============================================================================;\
-	echo;\
-	echo "Opening GDB port ... ";\
-	$(CY_OPENOCD_DIR)/bin/openocd $(CY_OPENOCD_DEBUG_ARGS)
-else
-	$(CY_NOISE)echo "Library application detected. Skip debug... ";\
-	echo
-endif
-
-attach:
-	$(CY_NOISE)echo;\
-	echo "Starting GDB Client... ";\
-	$(CY_GDB_CLIENT) $(CY_OPENOCD_SYMBOL_IMG) -x $(CY_GDB_ARGS)
-
-
-.PHONY: erase program qprogram debug qdebug attach

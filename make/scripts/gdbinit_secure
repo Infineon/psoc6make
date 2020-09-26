@@ -19,10 +19,8 @@ monitor reset init
 # Halt device
 monitor halt
 
-# Synchronize client and server
+# Flush GDB internal register cache
 flushregs
-mon gdb_sync
-stepi
 
 # Set temporary breakpoint at main
 tbreak main

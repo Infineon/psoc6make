@@ -145,6 +145,12 @@ else
 CY_INTERNAL_TOOL_fw-loader_EXE:=$(CY_FW_LOADER_DIR)/bin/fw-loader
 endif
 
+ifneq ($(CY_TOOL_python_EXE),)
+CY_INTERNAL_TOOL_python_EXE:=$(CY_INTERNAL_TOOLS)/$(CY_TOOL_python_EXE)
+else
+CY_INTERNAL_TOOL_python_EXE=
+endif
+
 #
 # Special handling for GCC
 # 	app makefile - CY_COMPILER_PATH (if selected toolchain is GCC)
@@ -242,4 +248,16 @@ endif
 # Externally use DEPENDENT_LIB_PATHS. Internally use SEARCH_LIBS_AND_INCLUDES to preserve BWC
 ifneq ($(DEPENDENT_LIB_PATHS),)
 SEARCH_LIBS_AND_INCLUDES+=$(DEPENDENT_LIB_PATHS)
+endif
+
+##########################
+# Eclipse launch configs
+##########################
+
+ifeq ($(CY_TOOL_gcc_BASE),)
+# tools_2.1 or tools_2.0
+CY_ECLIPSE_GDB=\$$\{cy_tools_path:gcc-7.2.1\}/bin/arm-none-eabi-gdb
+else
+# tools_2.2 or later
+CY_ECLIPSE_GDB=\$$\{cy_tools_path:CY_TOOL_arm-none-eabi-gdb_EXE\}
 endif

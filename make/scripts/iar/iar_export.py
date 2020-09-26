@@ -12,7 +12,7 @@ from xml.dom import minidom
 from xml.etree import ElementTree
 
 PROJ_DIR_STR = "$PROJ_DIR$"
-GRP_UNFILTERED = "unf:/tered*"
+GRP_UNFILTERED = ("unf:/tered*",)
 GRP_HEADER = "Header"
 GRP_SRC = "Source"
 
@@ -57,7 +57,7 @@ def parseIarData(fileName):
 
     Returns a tuple of (project_name device_name core linker_script defineList includePathList cSrcList asmSrcList headersList libsList)
     """
-    ProjectData = namedtuple("ProjectData", "projectName deviceName core linkerScript defineList includePathList cSrcList asmSrcList headersList libsList")
+    ProjectData = namedtuple("ProjectData", "projectName deviceName core linkerScript defineList includePathList cSrcList asmSrcList headersList libsList, searches, sharedLibDir")
 
     with open(fileName, 'r') as fp:
         projectName = fp.readline().strip()
@@ -72,8 +72,10 @@ def parseIarData(fileName):
         asmSrcList = list(filter(None, fp.readline().strip().split(',')))
         headersList = list(filter(None, fp.readline().strip().split(',')))
         libsList = list(filter(None, fp.readline().strip().split(',')))
+        searches = list(filter(None, fp.readline().strip().split(',')))
+        sharedLibDir = fp.readline().strip()
 
-    return ProjectData(projectName, device, core, linkerScript, defineList, includePathList, cSrcList, asmSrcList, headersList, libsList)
+    return ProjectData(projectName, device, core, linkerScript, defineList, includePathList, cSrcList, asmSrcList, headersList, libsList, searches, sharedLibDir)
 
 def getDuplicateFiles(sourceList):
     seen = set()
@@ -127,7 +129,21 @@ def printPretty(root):
     parsed = minidom.parseString(ugly) 
     return parsed.toprettyxml(indent="  ", encoding='utf8')
 
-def filterFiles(groupDict, fileList):
+def processSearches(sharedLibsDir, searches):
+    # return a tuple, the first is path of the search item, the second is tuple of sub groups to create
+    cleanSharedLibsDir = cleanUpPath(sharedLibsDir)
+    searchDict = {}
+
+    for search in searches:
+        cleanSearch = cleanUpPath(search)
+        if cleanSharedLibsDir and cleanSearch.startswith(cleanSharedLibsDir):
+            # for directory under sharedLibsDir, create recursive subgroup.
+            searchDict[cleanSearch] = tuple(re.split('/|\\\\', cleanSearch[len(cleanSharedLibsDir) + 1 : ]))
+        else:
+            searchDict[cleanSearch] = (os.path.basename(re.split('/|\\\\', cleanSearch)[-1]),)
+    return searchDict
+
+def filterFiles(groupDict, searchDict, fileList):
     """
     Filters the files into groups. This function currently only support MTB project structure.
     It assumes a libs directory that contains all libaries used by the project and  creates a 
@@ -142,29 +158,39 @@ def filterFiles(groupDict, fileList):
             index = dirsList.index("libs")
             # Any child of libs directory is a group.
             grp = dirsList[index + 1]
-            groupDict[grp].append(cleanFile)
+            groupDict[(grp,)].append(cleanFile)
         except ValueError:
-            groupDict[GRP_UNFILTERED].append(cleanFile)
+            # group items in make search into groups
+            addedToSearchGroup = False
+            for k, v in searchDict.items():
+                if cleanFile.startswith(k):
+                    groupDict[v].append(cleanFile)
+                    addedToSearchGroup = True
+            if not addedToSearchGroup:
+                groupDict[GRP_UNFILTERED].append(cleanFile)
             
 def createGroup(root, group, fileList):
     """
     Creates group for each key in the the groupDict.
     It also segregates files into Header and Source group based on file extension.
     """
-    topGroupElem = ElementTree.SubElement(root, ELEM_GROUP, {ATTR_NAME: group})
-    headerGroupElem = None
-    sourceGroupElem = None
-    pathElem = None
-    for fl in fileList:
-        if fl.endswith(".h"):
-            if headerGroupElem == None:
-                headerGroupElem = ElementTree.SubElement(topGroupElem, ELEM_GROUP, {ATTR_NAME: GRP_HEADER})
-            pathElem = ElementTree.SubElement(headerGroupElem, ELEM_PATH)
-        else:
-            if sourceGroupElem == None:
-                sourceGroupElem = ElementTree.SubElement(topGroupElem, ELEM_GROUP, {ATTR_NAME: GRP_SRC})
-            pathElem = ElementTree.SubElement(sourceGroupElem, ELEM_PATH)
-        pathElem.text = fl
+    topGroupElem = ElementTree.SubElement(root, ELEM_GROUP, {ATTR_NAME: group[0]})
+    if len(group) == 1:
+        headerGroupElem = None
+        sourceGroupElem = None
+        pathElem = None
+        for fl in fileList:
+            if fl.endswith(".h"):
+                if headerGroupElem == None:
+                    headerGroupElem = ElementTree.SubElement(topGroupElem, ELEM_GROUP, {ATTR_NAME: GRP_HEADER})
+                pathElem = ElementTree.SubElement(headerGroupElem, ELEM_PATH)
+            else:
+                if sourceGroupElem == None:
+                    sourceGroupElem = ElementTree.SubElement(topGroupElem, ELEM_GROUP, {ATTR_NAME: GRP_SRC})
+                pathElem = ElementTree.SubElement(sourceGroupElem, ELEM_PATH)
+            pathElem.text = fl
+    else:
+        createGroup(topGroupElem, group[1:], fileList)
 
 def generateIpcf(inFile, outFile):
     """
@@ -186,20 +212,10 @@ def generateIpcf(inFile, outFile):
         print(*asmSrcDups, sep = ";")
 
     root = ElementTree.Element(ELEM_IAR_PROJ_CONN, {ATTR_NAME: projectData.projectName, ATTR_VERSION: '1.9'})
-    coreSuffix = ""
-    if projectData.core == "CM0p":
-        coreSuffix = 'M0+'
-    elif projectData.core == "CM4":
-        coreSuffix = 'M4'
-    else:
-        raise Exception("Core %s not supported by this export mechanism.\n" % projectData.core)
-    
     # Device element
     deviceElem = ElementTree.SubElement(root, ELEM_DEVICE)
     nameElem = ElementTree.SubElement(deviceElem, ELEM_NAME)
-    # The device name format needs to match the name of the device in the 
-    # IAR database. Expected format for Cypress devices is {MPN-name}M4/{MPN-name}M0+
-    nameElem.text = projectData.deviceName + coreSuffix
+    nameElem.text = projectData.deviceName
 
     # The IAR compiler and assembler need to have the defines and include paths 
     # specified separately. The same list is passed to both below.
@@ -236,11 +252,13 @@ def generateIpcf(inFile, outFile):
     for lib in projectData.libsList:
         argElem = ElementTree.SubElement(linkerOptsElem, ELEM_ARG)
         argElem.text = cleanUpPath(lib)
+
+    searchesDict = processSearches(projectData.sharedLibDir, projectData.searches)
         
     groupDict = defaultdict(list)
-    filterFiles(groupDict, projectData.headersList)
-    filterFiles(groupDict, projectData.cSrcList)
-    filterFiles(groupDict, projectData.asmSrcList)
+    filterFiles(groupDict, searchesDict, projectData.headersList)
+    filterFiles(groupDict, searchesDict, projectData.cSrcList)
+    filterFiles(groupDict, searchesDict, projectData.asmSrcList)
 
     filesElem = ElementTree.SubElement(root, ELEM_FILES)
     for grp in sorted(groupDict.keys()):
@@ -261,7 +279,7 @@ def is_valid_file(parser, arg):
         parser.error("The file %s does not exist!" % arg)
     return arg
 
-def main():
+def run_export():
     argParser = argparse.ArgumentParser()
     argParser.add_argument("-i", dest="inFile", required=True,
                     help="Project data file generated by `make TOOLCHAIN=IAR ewarm8`", metavar="FILE",
@@ -279,4 +297,8 @@ def main():
         print("Generated IAR Project connection file: %s" % args.outFile)
 
 if __name__ == '__main__':
-    main()
+    try:
+        run_export()
+    except Exception as error:
+        print("ERROR: %s" % error)
+        sys.exit(1)

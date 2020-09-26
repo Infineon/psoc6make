@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 (set -o igncr) 2>/dev/null && set -o igncr; # this comment is required
 set -$-ue${DEBUG+xv}
 
@@ -31,7 +31,7 @@ memcalc() {
     while IFS=$' \t\n\r' read -r line; do
         local lineArray=($line)
         local numElem=${#lineArray[@]}
-        
+
         # Only look at potentially valid lines
         if [[ $numElem -ge 6 ]]; then
             # Section headers
@@ -51,6 +51,8 @@ memcalc() {
                         sizeElement=${lineArray[$idx+2]}
                     fi
                 done
+                heapCheckArray+=($sectionElement)
+
                 # Only consider non-zero size sections
                 if [[ $addrElement != "00000000" ]]; then
                     printf "  | %-20s |  0x%-10s |  %-10s | \n" $sectionElement $addrElement $((16#$sizeElement))
@@ -68,11 +70,23 @@ memcalc() {
         fi
     done < "$READELFFILE"
 
+    # Check if the SRAM data includes a section for the heap
+    # Note: echo | grep can potentially take a while. Do it before printing total numbers
+    if echo ${heapCheckArray[@]} | grep -iqF heap; then
+        sramIncludesHeap=1
+    else
+        sramIncludesHeap=0
+    fi
+
     printf "   ---------------------------------------------------- \n\n"
     printf "  %-41s %-10s \n" 'Total Internal Flash (Available)' $AVAILABLEFLASH
     printf "  %-41s %-10s \n\n" 'Total Internal Flash (Utilized)' $internalFlash
     printf "  %-41s %-10s \n" 'Total Internal SRAM (Available)' $AVAILABLESRAM
-    printf "  %-41s %-10s \n" 'Total Internal SRAM (Utilized)' $internalSram
+    if [[ $sramIncludesHeap -eq 1 ]]; then
+        printf "  %-41s %-10s \n" 'Total Internal SRAM (Utilized with heap)' $internalSram
+    else
+        printf "  %-41s %-10s \n" 'Total Internal SRAM (Utilized)' $internalSram
+    fi
 }
 
 memcalc

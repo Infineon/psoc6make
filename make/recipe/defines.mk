@@ -26,11 +26,12 @@ ifeq ($(WHICHFILE),true)
 $(info Processing $(lastword $(MAKEFILE_LIST)))
 endif
 
+include $(CY_INTERNAL_BASELIB_PATH)/make/recipe/defines_common.mk
 
-#
-# List the supported toolchains
-#
-CY_SUPPORTED_TOOLCHAINS=GCC_ARM IAR ARM A_Clang
+
+################################################################################
+# General
+################################################################################
 
 #
 # Define the default core
@@ -38,8 +39,6 @@ CY_SUPPORTED_TOOLCHAINS=GCC_ARM IAR ARM A_Clang
 CORE?=CM4
 CY_START_FLASH=0x10000000
 CY_START_SRAM=0x08000000
-
-CY_OPEN_bt_configurator_DEVICE=--device PSoC6
 
 #
 # Core specifics
@@ -86,21 +85,22 @@ CY_OPENOCD_CM0_DISABLE_ECLIPSE=-c \&quot;$(CY_OPENOCD_CM0_DISABLE_FLAG)\&quot;\&
 CY_OPENOCD_SECOND_RESET_TYPE=init
 CY_OPENOCD_EXTRA_PORT_FLAG=
 CY_OPENOCD_EXTRA_PORT_ECLIPSE=
-CY_OPENOCD_OTHER_RUN_CMD=
-CY_OPENOCD_OTHER_RUN_CMD_ECLIPSE=
+CY_OPENOCD_RUN_RESTART_CMD_DEBUG_ECLIPSE=flushregs
+CY_OPENOCD_RUN_RESTART_CMD_ATTACH_ECLIPSE=$(CY_OPENOCD_RUN_RESTART_CMD_DEBUG_ECLIPSE)
 CY_OPENOCD_SMIF_DISABLE=set DISABLE_SMIF 1
 CY_OPENOCD_SMIF_DISABLE_ECLIPSE=-c \&quot;$(CY_OPENOCD_SMIF_DISABLE)\&quot;\&\#13;\&\#10;
 CY_ECLIPSE_TEMPLATES_WILDCARD=$(CORE)/*KitProg3*
 CY_OPENOCD_SHELL_TIMEOUT_CMD=shell sleep 5
 CY_OPENOCD_SHELL_TIMEOUT_ECLIPSE=$(CY_OPENOCD_SHELL_TIMEOUT_CMD)\&\#13;\&\#10;
+else
+CY_OPENOCD_RUN_RESTART_CMD_DEBUG_ECLIPSE=mon psoc6 reset_halt sysresetreq\&\#13;\&\#10;flushregs\&\#13;\&\#10;mon gdb_sync\&\#13;\&\#10;stepi
+CY_OPENOCD_RUN_RESTART_CMD_ATTACH_ECLIPSE=flushregs\&\#13;\&\#10;mon gdb_sync\&\#13;\&\#10;stepi
 endif
 
 #
 # Architecure specifics
 #
 CY_OPENOCD_CHIP_NAME=psoc6
-CY_OPENOCD_OTHER_RUN_CMD?=mon psoc6 reset_halt sysresetreq
-CY_OPENOCD_OTHER_RUN_CMD_ECLIPSE?=$(CY_OPENOCD_OTHER_RUN_CMD)\&\#13;\&\#10;
 ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_DIE_PSOC6ABLE2)))
 
 CY_PSOC_ARCH=psoc6_01
@@ -270,9 +270,11 @@ ifeq ($(CY_LINKER_SCRIPT_NAME),)
 $(call CY_MACRO_ERROR,Could not resolve device series for linker script)
 endif
 
-#
+
+################################################################################
 # BSP generation
-#
+################################################################################
+
 DEVICE_GEN?=$(DEVICE)
 ADDITIONAL_DEVICES_GEN?=$(ADDITIONAL_DEVICES)
 
@@ -344,87 +346,44 @@ CY_BSP_STARTUP_CM0P=$(CY_BSP_STARTUP)_$(CY_BSP_STARTUP_CM0P_SUFFIX)
 CY_BSP_STARTUP_CM4=$(CY_BSP_STARTUP)_$(CY_BSP_STARTUP_CM4_SUFFIX)
 
 # Paths
+CY_BSP_TEMPLATES_DIR=$(call CY_MACRO_DIR,$(firstword $(CY_DEVICESUPPORT_SEARCH_PATH)))/devices/COMPONENT_CAT1A/templates/COMPONENT_MTB
+ifeq ($(wildcard $(CY_BSP_TEMPLATES_DIR)),)
 CY_BSP_TEMPLATES_DIR=$(call CY_MACRO_DIR,$(firstword $(CY_DEVICESUPPORT_SEARCH_PATH)))/devices/templates/COMPONENT_MTB
-CY_BSP_DESTINATION_CM0P_DIR=$(CY_TARGET_GEN_DIR)/COMPONENT_CM0P
-CY_BSP_DESTINATION_CM4_DIR=$(CY_TARGET_GEN_DIR)/COMPONENT_CM4
+endif
+CY_BSP_DESTINATION_DIR=$(CY_TARGET_GEN_DIR)/COMPONENT_CM0P $(CY_TARGET_GEN_DIR)/COMPONENT_CM4
 CY_BSP_DESTINATION_ABSOLUTE=$(abspath $(CY_TARGET_GEN_DIR))
 
-# Command for copying linker scripts and starups
-ifeq ($(sort $(CY_BSP_LINKER_SCRIPT) $(CY_BSP_STARTUP)),)
-CY_BSP_TEMPLATES_CMD=echo "Could not determine linker scripts and startup files for DEVICE $(DEVICE_GEN). Skipping update...";
-else
-CY_BSP_TEMPLATES_CMD=\
-	if [ -d $(CY_BSP_TEMPLATES_DIR) ]; then \
-		echo "Populating $(CY_BSP_LINKER_SCRIPT) linker scripts and $(CY_BSP_STARTUP) startup files...";\
-		rm -rf $(CY_BSP_DESTINATION_CM0P_DIR) $(CY_BSP_DESTINATION_CM4_DIR);\
-		pushd  $(CY_BSP_TEMPLATES_DIR) 1> /dev/null;\
-		$(CY_FIND) . -type d -exec mkdir -p $(CY_BSP_DESTINATION_ABSOLUTE)/'{}' \; ;\
-		$(CY_FIND) . -type f \( \
-		-name "system_psoc6*" \
-		-o -name "*$(CY_BSP_STARTUP_CM0P)*" \
-		-o -name "*$(CY_BSP_STARTUP_CM4)*" \
-		-o -name "*$(CY_BSP_LINKER_SCRIPT_CM0P)*" \
-		-o -name "*$(CY_BSP_LINKER_SCRIPT_CM4)*" \
-		\) -exec cp -p '{}' $(CY_BSP_DESTINATION_ABSOLUTE)/'{}' \; ;\
-		popd 1> /dev/null;\
-	else \
-		echo "Could not detect template linker scripts and startup files. Skipping update...";\
-	fi;
+ifeq ($(strip $(CY_BSP_LINKER_SCRIPT) $(CY_BSP_STARTUP)),)
+CY_BSP_TEMPLATES_CMD=echo "Could not locate template linker scripts and startup files for DEVICE $(DEVICE_GEN). Skipping update...";
 endif
 
-# Command for updating the device(s)
-CY_BSP_DEVICES_CMD=\
-	designFile=$$($(CY_FIND) $(CY_TARGET_GEN_DIR) -name *.modus);\
-	if [[ $$designFile ]]; then\
-		echo "Running device-configurator for $(DEVICE_GEN) $(ADDITIONAL_DEVICES_GEN)...";\
-		$(CY_CONFIG_MODUS_EXEC)\
-		$(CY_CONFIG_LIBFILE)\
-		--build $$designFile\
-		--set-device=$(subst $(CY_SPACE),$(CY_COMMA),$(DEVICE_GEN) $(ADDITIONAL_DEVICES_GEN));\
-		cfgStatus=$$(echo $$?);\
-		if [ $$cfgStatus != 0 ]; then echo "ERROR: Device-configuration failed for $$designFile"; exit $$cfgStatus; fi;\
-	else\
-		echo "Could not detect .modus file. Skipping update...";\
-	fi;
+# Command for searching files in the template directory
+CY_BSP_SEARCH_FILES_CMD=\
+	-name "system_psoc6*" \
+	-o -name "*$(CY_BSP_STARTUP_CM0P)*" \
+	-o -name "*$(CY_BSP_STARTUP_CM4)*" \
+	-o -name "*$(CY_BSP_LINKER_SCRIPT_CM0P)*" \
+	-o -name "*$(CY_BSP_LINKER_SCRIPT_CM4)*"
 
-#
-# Paths used in program/debug
-#
-ifeq ($(CY_DEVICESUPPORT_PATH),)
-CY_OPENOCD_SVD_PATH?=
-else
-CY_OPENOCD_SVD_PATH?=
-endif
-CY_OPENOCD_QSPI_CFG_PATH=$(CY_TARGET_DIR)/COMPONENT_BSP_DESIGN_MODUS/GeneratedSource
 
-#
-# Set the output file paths
-#
-ifneq ($(CY_BUILD_LOCATION),)
-CY_SYM_FILE?=$(CY_INTERNAL_BUILD_LOC)/$(TARGET)/$(CONFIG)/$(APPNAME).elf
-CY_PROG_FILE?=$(CY_INTERNAL_BUILD_LOC)/$(TARGET)/$(CONFIG)/$(APPNAME).hex
-else
-CY_SYM_FILE?=\$$\{cy_prj_path\}/$(notdir $(CY_INTERNAL_BUILD_LOC))/$(TARGET)/$(CONFIG)/$(APPNAME).elf
-CY_PROG_FILE?=\$$\{cy_prj_path\}/$(notdir $(CY_INTERNAL_BUILD_LOC))/$(TARGET)/$(CONFIG)/$(APPNAME).hex
-endif
-
-#
+################################################################################
 # IDE specifics
-#
+################################################################################
 
 ifeq ($(filter vscode,$(MAKECMDGOALS)),vscode)
-
 CY_VSCODE_JSON_PROCESSING=\
 	if [[ $$jsonFile == "launch.json" ]]; then\
 		if [[ $(CY_OPENOCD_CHIP_NAME) == "psoc64" ]]; then\
 			grep -v "//PSoC6 Only//" $(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile >\
 				$(CY_VSCODE_OUT_TEMPLATE_PATH)/__$$jsonFile;\
-			sed -e 's/\/\/PSoC64 Only\/\///g' $(CY_VSCODE_OUT_TEMPLATE_PATH)/__$$jsonFile >\
+			sed -e '/\/\/JLink Start PSoC6 Only\/\//,/\/\/JLink End PSoC6 Only\/\//d'\
+				-e 's/\/\/PSoC64 Only\/\///g' $(CY_VSCODE_OUT_TEMPLATE_PATH)/__$$jsonFile >\
 				$(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile;\
 		else\
 			grep -v "//PSoC64 Only//" $(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile >\
 				$(CY_VSCODE_OUT_TEMPLATE_PATH)/__$$jsonFile;\
-			sed -e 's/\/\/PSoC6 Only\/\///g' $(CY_VSCODE_OUT_TEMPLATE_PATH)/__$$jsonFile >\
+			sed -e 's/\/\/JLink Start PSoC6 Only\/\///g' -e 's/\/\/JLink End PSoC6 Only\/\///g'\
+				-e 's/\/\/PSoC6 Only\/\///g' $(CY_VSCODE_OUT_TEMPLATE_PATH)/__$$jsonFile >\
 				$(CY_VSCODE_OUT_TEMPLATE_PATH)/$$jsonFile;\
 		fi;\
 		rm $(CY_VSCODE_OUT_TEMPLATE_PATH)/__$$jsonFile;\
@@ -440,39 +399,9 @@ CY_VSCODE_OPENOCD_PROCESSING=\
 		mv -f $(CY_VSCODE_OUT_PATH)/_openocd.tcl $(CY_VSCODE_OUT_PATH)/openocd.tcl;\
 	fi;\
 
-
-CY_GCC_BASE_DIR=$(subst $(CY_INTERNAL_TOOLS)/,,$(CY_INTERNAL_TOOL_gcc_BASE))
-CY_GCC_VERSION=$(shell $(CY_INTERNAL_TOOL_arm-none-eabi-gcc_EXE) -dumpversion)
-
-ifneq ($(CY_BUILD_LOCATION),)
-CY_ELF_FILE?=$(CY_INTERNAL_BUILD_LOC)/$(TARGET)/$(CONFIG)/$(APPNAME).elf
-CY_HEX_FILE?=$(CY_INTERNAL_BUILD_LOC)/$(TARGET)/$(CONFIG)/$(APPNAME).hex
-
-else
-CY_ELF_FILE?=./$(notdir $(CY_INTERNAL_BUILD_LOC))/$(TARGET)/$(CONFIG)/$(APPNAME).elf
-CY_HEX_FILE?=./$(notdir $(CY_INTERNAL_BUILD_LOC))/$(TARGET)/$(CONFIG)/$(APPNAME).hex
-
-endif
-
-CY_VSCODE_ARGS="s|&&CY_ELF_FILE&&|$(CY_ELF_FILE)|g;"\
-				"s|&&CY_HEX_FILE&&|$(CY_HEX_FILE)|g;"\
-				"s|&&CY_OPEN_OCD_FILE&&|$(CY_OPENOCD_DEVICE_CFG)|g;"\
-				"s|&&CY_SVD_FILE_NAME&&|$(CY_OPENOCD_SVD_PATH)|g;"\
-				"s|&&CY_MTB_PATH&&|$(CY_TOOLS_DIR)|g;"\
-				"s|&&CY_TOOL_CHAIN_DIRECTORY&&|$(subst ",,$(CY_CROSSPATH))|g;"\
-				"s|&&CY_C_FLAGS&&|$(CY_RECIPE_CFLAGS)|g;"\
-				"s|&&CY_GCC_VERSION&&|$(CY_GCC_VERSION)|g;"\
-				"s|&&CY_DEVICE_PROGRAM&&|$(CY_JLINK_DEVICE_CFG_PROGRAM)|g;"\
+CY_VSCODE_ARGS+="s|&&CY_DEVICE_PROGRAM&&|$(CY_JLINK_DEVICE_CFG_PROGRAM)|g;"\
 				"s|&&CY_DEVICE_DEBUG&&|$(CY_JLINK_DEVICE_CFG_DEBUG)|g;"\
-				"s|&&CY_DEVICE_ATTACH&&|$(CY_JLINK_DEVICE_CFG_ATTACH)|g;"
-
-ifeq ($(CY_USE_CUSTOM_GCC),true)
-CY_VSCODE_ARGS+="s|&&CY_GCC_BIN_DIR&&|$(CY_INTERNAL_TOOL_gcc_BASE)/bin|g;"\
- 				"s|&&CY_GCC_DIRECTORY&&|$(CY_INTERNAL_TOOL_gcc_BASE)|g;"
-else
-CY_VSCODE_ARGS+="s|&&CY_GCC_BIN_DIR&&|$$\{config:modustoolbox.toolsPath\}/$(CY_GCC_BASE_DIR)/bin|g;"\
- 				"s|&&CY_GCC_DIRECTORY&&|$$\{config:modustoolbox.toolsPath\}/$(CY_GCC_BASE_DIR)|g;"
-endif
+				"s|&&CY_OPENOCD_CHIP&&|$(CY_OPENOCD_CHIP_NAME)|g;"
 
 ifeq ($(CORE),CM0P)
 CY_VSCODE_ARGS+="s|&&CY_TARGET_PROCESSOR_NAME&&|CM0+|g;"\
@@ -491,10 +420,24 @@ endif
 endif
 endif
 
-CY_ECLIPSE_ARGS="s|&&CY_OPENOCD_CFG&&|$(CY_OPENOCD_DEVICE_CFG)|g;"\
-				"s|&&CY_OPENOCD_CHIP&&|$(CY_OPENOCD_CHIP_NAME)|g;"\
-				"s|&&CY_OPENOCD_SECOND_RESET&&|$(CY_OPENOCD_SECOND_RESET_TYPE)|g;"\
-				"s|&&CY_OPENOCD_OTHER_RUN_CMD&&|$(CY_OPENOCD_OTHER_RUN_CMD_ECLIPSE)|g;"\
+ifeq ($(CORE),CM4)
+ifneq (,$(findstring $(DEVICE), $(CY_DEVICES_WITH_M0P)))
+CY_IAR_CORE_SUFFIX="M4"
+endif
+endif
+ifeq ($(CORE),CM0P)
+CY_IAR_CORE_SUFFIX="M0+"
+endif
+
+# The device name format needs to match the name of the device in the IAR database.
+# Expected format for Cypress single core devices is {MPN-name}.
+# Expected format for Cypress multi core device is {MPN-name}{Core}.
+CY_IAR_DEVICE_NAME=$(DEVICE)$(CY_IAR_CORE_SUFFIX)
+
+ifeq ($(filter eclipse,$(MAKECMDGOALS)),eclipse)
+CY_ECLIPSE_ARGS+="s|&&CY_OPENOCD_SECOND_RESET&&|$(CY_OPENOCD_SECOND_RESET_TYPE)|g;"\
+				"s|&&CY_OPENOCD_RUN_RESTART_DEBUG_CMD&&|$(CY_OPENOCD_RUN_RESTART_CMD_DEBUG_ECLIPSE)|g;"\
+				"s|&&CY_OPENOCD_RUN_RESTART_ATTACH_CMD&&|$(CY_OPENOCD_RUN_RESTART_CMD_ATTACH_ECLIPSE)|g;"\
 				"s|&&CY_OPENOCD_SHELL_TIMEOUT&&|$(CY_OPENOCD_SHELL_TIMEOUT_ECLIPSE)|g;"\
 				"s|&&CY_JLINK_CFG_PROGRAM&&|$(CY_JLINK_DEVICE_CFG_PROGRAM)|g;"\
 				"s|&&CY_JLINK_CFG_DEBUG&&|$(CY_JLINK_DEVICE_CFG_DEBUG)|g;"\
@@ -503,32 +446,15 @@ CY_ECLIPSE_ARGS="s|&&CY_OPENOCD_CFG&&|$(CY_OPENOCD_DEVICE_CFG)|g;"\
 				"s|&&CY_OPENOCD_CM0_FLAG&&|$(CY_OPENOCD_CM0_DISABLE_ECLIPSE)|g;"\
 				"s|&&CY_OPENOCD_SMIF_DISABLE&&|$(CY_OPENOCD_SMIF_DISABLE_ECLIPSE)|g;"\
 				"s|&&CY_CORE&&|$(CY_OPENOCD_CORE)|g;"\
-				"s|&&CY_APPNAME&&|$(CY_IDE_PRJNAME)|g;"\
-				"s|&&CY_CONFIG&&|$(CONFIG)|g;"\
-				"s|&&CY_QSPI_CFG_PATH&&|$(CY_OPENOCD_QSPI_CFG_PATH)|g;"\
-				"s|&&CY_SVD_PATH&&|$(CY_OPENOCD_SVD_PATH)|g;"\
-				"s|&&CY_SYM_FILE&&|$(CY_SYM_FILE)|g;"\
-				"s|&&CY_PROG_FILE&&|$(CY_PROG_FILE)|g;"
+				"s|&&CY_QSPI_CFG_PATH&&|$(CY_OPENOCD_QSPI_CFG_PATH_WITH_FLAG)|g;"
+endif
 
-#
+################################################################################
 # Tools specifics
-#
-ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_CAPSENSE)))
-CY_SUPPORTED_TOOL_TYPES+=capsense-configurator capsense-tuner
-endif
-ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_BLE)))
-CY_SUPPORTED_TOOL_TYPES+=bt-configurator
-endif
-ifneq (,$(findstring $(DEVICE),$(CY_DEVICES_WITH_FS_USB)))
-CY_SUPPORTED_TOOL_TYPES+=usbdev-configurator
-endif
+################################################################################
+
 CY_SUPPORTED_TOOL_TYPES+=\
-	device-configurator\
-	qspi-configurator\
-	seglcd-configurator\
-	smartio-configurator\
-	cype-tool\
-	dfuh-tool
+	qspi-configurator
 
 # PSoC 6 smartio also uses the .modus extension
 modus_DEFAULT_TYPE+=device-configurator smartio-configurator

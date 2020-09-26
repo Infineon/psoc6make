@@ -2,7 +2,7 @@
 # \file GCC_ARM.mk
 #
 # \brief
-# GCC ARM toolchain configuration.
+# GCC ARM toolchain configuration
 #
 ################################################################################
 # \copyright
@@ -46,25 +46,21 @@ CY_MACRO_ELF2BIN=$(CY_TOOLCHAIN_ELF2BIN) -O binary $1 $2
 #
 # The base path to the GCC cross compilation executables
 #
-ifeq ($(CY_COMPILER_PATH),)
-CY_CROSSPATH=$(CY_COMPILER_GCC_ARM_DIR)
-else
-CY_CROSSPATH=$(CY_COMPILER_PATH)
-endif
+CY_CROSSPATH=$(CY_INTERNAL_TOOL_gcc_BASE)
 
 #
 # Build tools
 #
-CC=$(CY_CROSSPATH)/bin/arm-none-eabi-gcc
-CXX=$(CY_CROSSPATH)/bin/arm-none-eabi-g++
+CC=$(CY_INTERNAL_TOOL_arm-none-eabi-gcc_EXE)
+CXX=$(CY_INTERNAL_TOOL_arm-none-eabi-g++_EXE)
 AS=$(CC)
-AR=$(CY_CROSSPATH)/bin/arm-none-eabi-ar
+AR=$(CY_INTERNAL_TOOL_arm-none-eabi-ar_EXE)
 LD=$(CXX)
 
 #
 # Elf to bin conversion tool
 #
-CY_TOOLCHAIN_ELF2BIN=$(CY_CROSSPATH)/bin/arm-none-eabi-objcopy
+CY_TOOLCHAIN_ELF2BIN=$(CY_INTERNAL_TOOL_arm-none-eabi-objcopy_EXE)
 
 
 ################################################################################
@@ -97,26 +93,34 @@ CY_TOOLCHAIN_COMMON_FLAGS=\
 	-Wall
 
 #
+# NOTE: The official NewLib Nano build leaks file buffers when used with reentrant support.
+# The ModusToolbox 2.2+ installer bundles a version that fixes this leak that has not yet been
+# accepted upstream.
+#
+CY_TOOLCHAIN_NEWLIBNANO=--specs=nano.specs
+
+#
 # CPU core specifics
 #
-# NOTE: NewLib Nano leaks file buffers when used with reentrant support. Only use it in small
-# devices that are not likely being run with an RTOS.
-#
 ifeq ($(CORE),CM0)
-CY_TOOLCHAIN_NEWLIBNANO=--specs=nano.specs
 CY_TOOLCHAIN_FLAGS_CORE=-mcpu=cortex-m0 $(CY_TOOLCHAIN_NEWLIBNANO)
 CY_TOOLCHAIN_VFP_FLAGS=
 else ifeq ($(CORE),CM0P)
-CY_TOOLCHAIN_NEWLIBNANO=--specs=nano.specs
 CY_TOOLCHAIN_FLAGS_CORE=-mcpu=cortex-m0plus $(CY_TOOLCHAIN_NEWLIBNANO)
 CY_TOOLCHAIN_VFP_FLAGS=
 else ifeq ($(CORE),CM4)
-CY_TOOLCHAIN_NEWLIBNANO=
 CY_TOOLCHAIN_FLAGS_CORE=-mcpu=cortex-m4 $(CY_TOOLCHAIN_NEWLIBNANO)
 ifeq ($(VFP_SELECT),hardfp)
 CY_TOOLCHAIN_VFP_FLAGS=-mfloat-abi=hard -mfpu=fpv4-sp-d16
 else
 CY_TOOLCHAIN_VFP_FLAGS=-mfloat-abi=softfp -mfpu=fpv4-sp-d16
+endif
+else ifeq ($(CORE),CM33)
+CY_TOOLCHAIN_FLAGS_CORE=-mcpu=cortex-m33 $(CY_TOOLCHAIN_NEWLIBNANO)
+ifeq ($(VFP_SELECT),hardfp)
+CY_TOOLCHAIN_VFP_FLAGS=-mfloat-abi=hard -mfpu=fpv5-sp-d16
+else
+CY_TOOLCHAIN_VFP_FLAGS=-mfloat-abi=softfp -mfpu=fpv5-sp-d16
 endif
 endif
 
@@ -176,6 +180,7 @@ CY_TOOLCHAIN_SUFFIX_D=d
 CY_TOOLCHAIN_SUFFIX_LS=ld
 CY_TOOLCHAIN_SUFFIX_MAP=map
 CY_TOOLCHAIN_SUFFIX_TARGET=elf
+CY_TOOLCHAIN_SUFFIX_PROGRAM=hex
 CY_TOOLCHAIN_SUFFIX_ARCHIVE=a
 
 #

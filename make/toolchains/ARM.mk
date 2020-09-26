@@ -96,11 +96,15 @@ CY_TOOLCHAIN_COMMON_FLAGS=--target=arm-arm-none-eabi
 #
 # CPU core specifics
 #
-ifeq ($(CORE),CM0P)
+ifeq ($(CORE),CM0)
+CY_TOOLCHAIN_CFLAGS_CORE=-mcpu=cortex-m0
+CY_TOOLCHAIN_FLAGS_CORE=--cpu=Cortex-M0
+CY_TOOLCHAIN_VFP_FLAGS=
+else ifeq ($(CORE),CM0P)
 CY_TOOLCHAIN_CFLAGS_CORE=-mcpu=cortex-m0plus
 CY_TOOLCHAIN_FLAGS_CORE=--cpu=Cortex-M0plus
 CY_TOOLCHAIN_VFP_FLAGS=
-else
+else ifeq ($(CORE),CM4)
 CY_TOOLCHAIN_CFLAGS_CORE=-mcpu=cortex-m4
 CY_TOOLCHAIN_FLAGS_CORE=--cpu=Cortex-M4
 ifeq ($(VFP_SELECT),hardfp)
@@ -109,6 +113,16 @@ CY_TOOLCHAIN_VFP_FLAGS=--fpu=FPv4-SP
 else
 CY_TOOLCHAIN_VFP_CFLAGS=-mfloat-abi=softfp -mfpu=fpv4-sp-d16
 CY_TOOLCHAIN_VFP_FLAGS=--fpu=SoftVFP+FPv4-SP
+endif
+else ifeq ($(CORE),CM33)
+CY_TOOLCHAIN_CFLAGS_CORE=-mcpu=cortex-m33
+CY_TOOLCHAIN_FLAGS_CORE=--cpu=Cortex-M33
+ifeq ($(VFP_SELECT),hardfp)
+CY_TOOLCHAIN_VFP_CFLAGS=-mfloat-abi=hard -mfpu=fpv5-sp-d16
+CY_TOOLCHAIN_VFP_FLAGS=--fpu=FPv5-SP
+else
+CY_TOOLCHAIN_VFP_CFLAGS=-mfloat-abi=softfp -mfpu=fpv5-sp-d16
+CY_TOOLCHAIN_VFP_FLAGS=--fpu=SoftVFP+FPv5-SP
 endif
 endif
 
@@ -166,6 +180,7 @@ CY_TOOLCHAIN_SUFFIX_D=d
 CY_TOOLCHAIN_SUFFIX_LS=sct
 CY_TOOLCHAIN_SUFFIX_MAP=map
 CY_TOOLCHAIN_SUFFIX_TARGET=elf
+CY_TOOLCHAIN_SUFFIX_PROGRAM=hex
 CY_TOOLCHAIN_SUFFIX_ARCHIVE=ar
 
 #

@@ -64,7 +64,7 @@ LD=$(CY_CROSSPATH)/bin/ilinkarm.exe
 #
 # Elf to bin conversion tool
 #
-CY_TOOLCHAIN_ELF2BIN=$(CY_COMPILER_GCC_ARM_DIR)/bin/arm-none-eabi-objcopy
+CY_TOOLCHAIN_ELF2BIN=$(CY_INTERNAL_TOOL_arm-none-eabi-objcopy_EXE)
 
 
 ################################################################################
@@ -77,7 +77,7 @@ CY_TOOLCHAIN_ELF2BIN=$(CY_COMPILER_GCC_ARM_DIR)/bin/arm-none-eabi-objcopy
 ifeq ($(CONFIG),Debug)
 CY_TOOLCHAIN_DEBUG_FLAG=-DDEBUG
 CY_TOOLCHAIN_OPTIMIZATION=-Ol
-else 
+else
 ifeq ($(CONFIG),Release)
 CY_TOOLCHAIN_DEBUG_FLAG=-DNDEBUG
 CY_TOOLCHAIN_OPTIMIZATION=-Ohs
@@ -101,12 +101,23 @@ endif
 #
 # CPU core specifics
 #
-ifeq ($(CORE),CM0P)
+ifeq ($(CORE),CM0)
+CY_TOOLCHAIN_FLAGS_CORE=--cpu Cortex-M0
+CY_TOOLCHAIN_VFP_FLAGS=
+else ifeq ($(CORE),CM0P)
 CY_TOOLCHAIN_FLAGS_CORE=--cpu Cortex-M0+
 CY_TOOLCHAIN_VFP_FLAGS=
-else
+else ifeq ($(CORE),CM4)
 CY_TOOLCHAIN_FLAGS_CORE=--cpu Cortex-M4
 CY_TOOLCHAIN_VFP_FLAGS=--fpu FPv4-SP
+ifeq ($(VFP_SELECT),hardfp)
+CY_TOOLCHAIN_VFP_CFLAGS=$(CY_TOOLCHAIN_VFP_FLAGS) --aapcs vfp
+else
+CY_TOOLCHAIN_VFP_CFLAGS=$(CY_TOOLCHAIN_VFP_FLAGS) --aapcs std
+endif
+else ifeq ($(CORE),CM33)
+CY_TOOLCHAIN_FLAGS_CORE=--cpu Cortex-M33
+CY_TOOLCHAIN_VFP_FLAGS=--fpu FPv5-SP
 ifeq ($(VFP_SELECT),hardfp)
 CY_TOOLCHAIN_VFP_CFLAGS=$(CY_TOOLCHAIN_VFP_FLAGS) --aapcs vfp
 else
@@ -172,6 +183,7 @@ CY_TOOLCHAIN_ARFLAGS=\
 #
 # Enable Multi-Threaded build arguments
 #
+# Note: If these FreeRTOS-specific flags are modified, the instructions in ide.mk should be updated to reflect the changes.
 ifeq ($(filter FREERTOS,$(COMPONENTS)),FREERTOS)
 CY_TOOLCHAIN_CFLAGS+=--dlib_config=full
 CY_TOOLCHAIN_CXXFLAGS+=--dlib_config=full
@@ -193,6 +205,7 @@ CY_TOOLCHAIN_SUFFIX_D=d
 CY_TOOLCHAIN_SUFFIX_LS=icf
 CY_TOOLCHAIN_SUFFIX_MAP=map
 CY_TOOLCHAIN_SUFFIX_TARGET=elf
+CY_TOOLCHAIN_SUFFIX_PROGRAM=hex
 CY_TOOLCHAIN_SUFFIX_ARCHIVE=a
 
 #

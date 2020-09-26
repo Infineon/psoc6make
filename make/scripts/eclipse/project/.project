@@ -26,5 +26,5 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
 	<linkedResources>
-&&LINKED_EXTAPP&&&&LINKED_SOURCES&&&&LINKED_INCLUDES&&  </linkedResources>
+&&LINKED_RESOURCES&&</linkedResources>
 </projectDescription>

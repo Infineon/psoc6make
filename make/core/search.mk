@@ -31,6 +31,28 @@ $(info Auto-discovery in progress...)
 
 
 ################################################################################
+# Macros
+################################################################################
+
+#
+# Construct absolute paths for given relative paths
+# $(1) : relative paths
+#
+define CY_MACRO_ABSPATHS
+
+CY_SEARCH_ABSPATH_$(1)=$(abspath $(1))
+CY_SEARCH_RELPATH_$(abspath $(1))=$(1)
+
+endef
+
+#
+# Convert absolute paths to relative paths
+# $(1) : asbolute paths
+#
+CY_MACRO_RELPATHS=$(foreach abs,$(CY_SEARCH_ABSPATH_LIST),$(patsubst $(abs)%,$(CY_SEARCH_RELPATH_$(abs))%,$(filter $(abs)%,$(1))))
+
+
+################################################################################
 # Ignore files
 ################################################################################
 
@@ -44,7 +66,8 @@ CY_IGNORE_FILES:=$(filter %.$(CY_TOOLCHAIN_SUFFIX_C),$(CY_IGNORE_DIRS))\
 					$(filter %.$(CY_TOOLCHAIN_SUFFIX_HPP),$(CY_IGNORE_DIRS))
 
 # Construct the arguments for directories to prune
-CY_IGNORE_PRUNE:=$(filter-out cytemp-o,cytemp$(addprefix -o -path ,$(abspath $(filter-out $(CY_IGNORE_FILES),$(CY_IGNORE_DIRS)))))
+CY_IGNORE_ABSPATH_LIST:=$(abspath $(filter-out $(CY_IGNORE_FILES),$(CY_IGNORE_DIRS)))
+CY_IGNORE_PRUNE:=-name ‘.git’ $(addprefix -o -path ,$(CY_IGNORE_ABSPATH_LIST))
 
 
 ################################################################################
@@ -53,8 +76,9 @@ CY_IGNORE_PRUNE:=$(filter-out cytemp-o,cytemp$(addprefix -o -path ,$(abspath $(f
 
 ifneq ($(DEPENDENT_APP_PATHS),)
 
-CY_DEPAPP_EXTAPP_LIST=$(foreach app,$(DEPENDENT_APP_PATHS),$($(notdir $(app))_DEPAPP_BUILD_LOCATION)/extapp.rsp)
-CY_DEPAPP_EXTAPP_DIRS=$(foreach extapp,$(CY_DEPAPP_EXTAPP_LIST),$(if $(wildcard $(extapp)),\
+CY_DEPAPP_EXTAPP_LIST:=$(foreach app,$(DEPENDENT_APP_PATHS),$($(notdir $(app))_DEPAPP_BUILD_LOCATION)/extapp.rsp)
+# Convert to relative paths
+CY_DEPAPP_EXTAPP_DIRS:=$(foreach extapp,$(CY_DEPAPP_EXTAPP_LIST),$(if $(wildcard $(extapp)),\
                         $(shell extappVal=$$(cat $(extapp)); \
                         perl -e 'use File::Spec; print File::Spec->abs2rel(@ARGV) . "\n"' $$extappVal $(CY_INTERNAL_APP_PATH))))
 
@@ -65,21 +89,24 @@ endif
 # Search Files
 ################################################################################
 
-# Clean up paths in preparation for auto-discovery and filtering ignored dirs and files
-CY_SEARCH_APP_PATH:=$(abspath $(CY_INTERNAL_APP_PATH))
-CY_SEARCH_EXTAPP_PATH:=$(abspath $(CY_INTERNAL_EXTAPP_PATH))
-CY_SEARCH_IGNORE_FILES:=$(patsubst $(CY_SEARCH_APP_PATH)/%,$(CY_INTERNAL_APP_PATH)/%,\
-                        $(patsubst $(CY_SEARCH_EXTAPP_PATH)/%,$(CY_INTERNAL_EXTAPP_PATH)/%,\
-                        $(abspath $(CY_IGNORE_FILES))))
+# Create paths
+CY_SEARCH_ASSET:=$(sort $(SEARCH))
+CY_SEARCH_PATHCONV_LIST:=$(CY_INTERNAL_APP_PATH) $(CY_INTERNAL_EXTAPP_PATH) $(CY_SEARCH_ASSET) $(CY_DEPAPP_EXTAPP_DIRS)
+$(foreach path,$(CY_SEARCH_PATHCONV_LIST),$(eval $(call CY_MACRO_ABSPATHS,$(path))))
+
+# Filter out directories that may be higher in directory hierarchy
+CY_SEARCH_ABSPATH_LIST_RAW:=$(foreach path,$(CY_SEARCH_PATHCONV_LIST),$(CY_SEARCH_ABSPATH_$(path)))
+CY_SEARCH_ABSPATH_LIST_REMOVE:=$(foreach ignore,$(CY_IGNORE_ABSPATH_LIST),$(filter $(ignore)%,$(CY_SEARCH_ABSPATH_LIST_RAW)))
+CY_SEARCH_ABSPATH_LIST:=$(filter-out $(CY_SEARCH_ABSPATH_LIST_REMOVE),$(CY_SEARCH_ABSPATH_LIST_RAW))
+CY_SEARCH_RELPATH_LIST:=$(foreach path,$(CY_SEARCH_ABSPATH_LIST),$(CY_SEARCH_RELPATH_$(path)))
+CY_SEARCH_IGNORE_FILES:=$(call CY_MACRO_RELPATHS,$(abspath $(CY_IGNORE_FILES)))
 
 #
 # Search for files. Use := assignment for better performance.
 # Note: find -prune requires absolute paths. Convert the result back to relative path afterwards.
 #
-CY_SEARCH_ALL_FILES:=$(patsubst $(CY_SEARCH_APP_PATH)/%,$(CY_INTERNAL_APP_PATH)/%,\
-                        $(patsubst $(CY_SEARCH_EXTAPP_PATH)/%,$(CY_INTERNAL_EXTAPP_PATH)/%,\
-                        $(sort $(shell $(CY_FIND) -L $(CY_SEARCH_APP_PATH) $(CY_SEARCH_EXTAPP_PATH) $(CY_DEPAPP_EXTAPP_DIRS) \
-                        \( $(CY_IGNORE_PRUNE) \) -prune \
+CY_SEARCH_ALL_FILES:=$(sort $(call CY_MACRO_RELPATHS,\
+                        $(shell $(CY_FIND) -L $(CY_SEARCH_ABSPATH_LIST) \( $(CY_IGNORE_PRUNE) \) -prune \
                         -o -type f -name "*.$(CY_TOOLCHAIN_SUFFIX_C)" -print \
                         -o -type f -name "*.$(CY_TOOLCHAIN_SUFFIX_S)" -print \
                         -o -type f -name "*.$(CY_TOOLCHAIN_SUFFIX_s)" -print \
@@ -89,7 +116,7 @@ CY_SEARCH_ALL_FILES:=$(patsubst $(CY_SEARCH_APP_PATH)/%,$(CY_INTERNAL_APP_PATH)/
                         -o -type f -name "*.$(CY_TOOLCHAIN_SUFFIX_H)" -print \
                         -o -type f -name "*.$(CY_TOOLCHAIN_SUFFIX_HPP)" -print \
                         -o -type d -name "COMPONENT_RESOURCE" -print \
-                        -o -type d -name "* *" -print))))
+                        -o -type d -name "* *" -print)))
 
 CY_SEARCH_C_FILES:=$(filter %.$(CY_TOOLCHAIN_SUFFIX_C),$(CY_SEARCH_ALL_FILES))
 CY_SEARCH_S_FILES:=$(filter %.$(CY_TOOLCHAIN_SUFFIX_S),$(CY_SEARCH_ALL_FILES))
@@ -166,17 +193,18 @@ CY_SEARCH_AVAILABLE_HPP_INCLUDES:=$(sort $(call CY_MACRO_DIR,$(call CY_MACRO_FIL
 # Separate out the external and internal includes
 #
 CY_SEARCH_DEPAPP_INCLUDES:=$(foreach depapp,$(CY_DEPAPP_EXTAPP_DIRS),$(filter $(depapp)%,$(CY_SEARCH_AVAILABLE_H_INCLUDES) $(CY_SEARCH_AVAILABLE_HPP_INCLUDES)))
+CY_SEARCH_ASSET_INCLUDES:=$(foreach asset,$(CY_SEARCH_ASSET),$(filter $(asset)%,$(CY_SEARCH_AVAILABLE_H_INCLUDES) $(CY_SEARCH_AVAILABLE_HPP_INCLUDES)))
 CY_SEARCH_EXTAPP_INCLUDES:=$(filter $(CY_INTERNAL_EXTAPP_PATH)/%,$(CY_SEARCH_AVAILABLE_H_INCLUDES) $(CY_SEARCH_AVAILABLE_HPP_INCLUDES))
-CY_SEARCH_INTAPP_INCLUDES:=$(filter-out $(CY_SEARCH_EXTAPP_INCLUDES) $(CY_SEARCH_DEPAPP_INCLUDES),$(CY_SEARCH_AVAILABLE_H_INCLUDES) $(CY_SEARCH_AVAILABLE_HPP_INCLUDES))
+CY_SEARCH_INTAPP_INCLUDES:=$(filter-out $(CY_SEARCH_EXTAPP_INCLUDES) $(CY_SEARCH_ASSET_INCLUDES) $(CY_SEARCH_DEPAPP_INCLUDES),$(CY_SEARCH_AVAILABLE_H_INCLUDES) $(CY_SEARCH_AVAILABLE_HPP_INCLUDES))
 
 #
 # Combine the directories of the header files and its parent directories  
 #
 CY_SEARCH_AVAILABLE_INCLUDES:=\
-    $(CY_SEARCH_AVAILABLE_H_INCLUDES)\
-    $(CY_SEARCH_AVAILABLE_HPP_INCLUDES)\
-    $(call CY_MACRO_SEARCH_PARENT,$(CY_SEARCH_INTAPP_INCLUDES),$(CY_INTERNAL_APP_PATH))\
-    $(call CY_MACRO_SEARCH_PARENT,$(CY_SEARCH_EXTAPP_INCLUDES),$(CY_INTERNAL_EXTAPP_PATH))
+    $(sort $(CY_SEARCH_INTAPP_INCLUDES) $(call CY_MACRO_SEARCH_PARENT,$(CY_SEARCH_INTAPP_INCLUDES),$(CY_INTERNAL_APP_PATH)))\
+    $(sort $(CY_SEARCH_EXTAPP_INCLUDES) $(call CY_MACRO_SEARCH_PARENT,$(CY_SEARCH_EXTAPP_INCLUDES),$(CY_INTERNAL_EXTAPP_PATH)))\
+    $(sort $(CY_SEARCH_ASSET_INCLUDES) $(foreach asset,$(CY_SEARCH_ASSET),$(call CY_MACRO_SEARCH_PARENT,$(filter $(asset)%,$(CY_SEARCH_ASSET_INCLUDES)),$(asset))))\
+    $(sort $(CY_SEARCH_DEPAPP_INCLUDES))
 
 # Conditionally add the generated source includes
 ifneq ($(CY_SEARCH_RESOURCE_FILES),)
@@ -189,18 +217,20 @@ endif
 CY_SEARCH_APP_SOURCE:=$(sort $(CY_SEARCH_AVAILABLE_S_SOURCES) $(CY_SEARCH_AVAILABLE_s_SOURCES)\
                 $(CY_SEARCH_AVAILABLE_C_SOURCES) $(CY_SEARCH_AVAILABLE_CPP_SOURCES))
 CY_SEARCH_APP_LIBS:=$(sort $(CY_SEARCH_AVAILABLE_O_SOURCES) $(CY_SEARCH_AVAILABLE_A_LIBS))
-CY_SEARCH_APP_INCLUDES:=$(sort $(CY_SEARCH_AVAILABLE_INCLUDES))
+CY_SEARCH_APP_INCLUDES:=$(CY_SEARCH_AVAILABLE_INCLUDES)
+
+# Filter out the asset sources to create build targets in build.mk
+CY_SEARCH_APP_SOURCE_ASSET:=$(foreach asset,$(CY_SEARCH_ASSET),$(filter $(asset)%,$(CY_SEARCH_APP_SOURCE)))
 
 #
 # Create cyqbuild makefile
 #
-$(shell \
-mkdir -p $(CY_CONFIG_DIR); \
-echo "CY_COMPONENT_LIST:=$(CY_COMPONENT_LIST)" > $(CY_CONFIG_DIR)/cyqbuild.mk; \
-echo "CY_SEARCH_APP_SOURCE:=$(CY_SEARCH_APP_SOURCE)" >> $(CY_CONFIG_DIR)/cyqbuild.mk; \
-echo "CY_SEARCH_APP_LIBS:=$(CY_SEARCH_APP_LIBS)" >> $(CY_CONFIG_DIR)/cyqbuild.mk; \
-echo "CY_SEARCH_APP_INCLUDES:=$(CY_SEARCH_APP_INCLUDES)" >> $(CY_CONFIG_DIR)/cyqbuild.mk; \
-echo "CY_SEARCH_EXPLICIT_RULE_LIST:=$(CY_SEARCH_EXPLICIT_RULE_LIST)" >> $(CY_CONFIG_DIR)/cyqbuild.mk; \
-)
+CY_SEARCH_GENERATE_QBUILD=\
+    mkdir -p $(CY_CONFIG_DIR); \
+    echo "CY_COMPONENT_LIST:=$(CY_COMPONENT_LIST)" > $(CY_CONFIG_DIR)/cyqbuild.mk; \
+    echo "CY_SEARCH_APP_SOURCE:=$(CY_SEARCH_APP_SOURCE)" >> $(CY_CONFIG_DIR)/cyqbuild.mk; \
+    echo "CY_SEARCH_APP_LIBS:=$(CY_SEARCH_APP_LIBS)" >> $(CY_CONFIG_DIR)/cyqbuild.mk; \
+    echo "CY_SEARCH_APP_INCLUDES:=$(CY_SEARCH_APP_INCLUDES)" >> $(CY_CONFIG_DIR)/cyqbuild.mk; \
+	echo "CY_SEARCH_APP_SOURCE_ASSET:=$(CY_SEARCH_APP_SOURCE_ASSET)" >> $(CY_CONFIG_DIR)/cyqbuild.mk;
 
 $(info Auto-discovery complete)

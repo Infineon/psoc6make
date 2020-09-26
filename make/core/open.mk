@@ -41,7 +41,7 @@ CY_OPEN_TYPE_LIST+=\
 
 CY_OPEN_library_manager_EXT=
 CY_OPEN_library_manager_FILE=
-CY_OPEN_library_manager_TOOL=$(CY_LIBRARY_MANAGER_DIR)/library-manager
+CY_OPEN_library_manager_TOOL=$(CY_INTERNAL_TOOL_library-manager_EXE)
 CY_OPEN_library_manager_TOOL_FLAGS=--target-dir $(CY_INTERNAL_APPLOC)
 CY_OPEN_library_manager_TOOL_NEWCFG_FLAGS=
 
@@ -51,7 +51,7 @@ CY_OPEN_library_manager_TOOL_NEWCFG_FLAGS=
 
 CY_OPEN_project_creator_EXT=
 CY_OPEN_project_creator_FILE=
-CY_OPEN_project_creator_TOOL=$(CY_PROJECT_CREATOR_DIR)/project-creator
+CY_OPEN_project_creator_TOOL=$(CY_INTERNAL_TOOL_project-creator_EXE)
 CY_OPEN_project_creator_TOOL_FLAGS=
 CY_OPEN_project_creator_TOOL_NEWCFG_FLAGS=
 
@@ -105,7 +105,6 @@ CY_OPEN_NEWCFG_XML_TYPES+=$(shell \
 		fi;\
 	done;\
 )
-
 endif
 
 endif
@@ -161,15 +160,15 @@ ifeq ($(CY_OPEN_TOOL_LAUNCH),)
 endif
 ifeq ($(CY_OPEN_TOOL_FILE),)
 	$(info Launching $(notdir $(CY_OPEN_TOOL_LAUNCH)) tool for a new configuration)
-	$(CY_NOISE) $(CY_OPEN_TOOL_LAUNCH) $(CY_OPEN_TOOL_ARGS) $(CY_OPEN_TOOL_NEWCFG_FLAGS) $(CY_OPEN_STDOUT) &
+	$(CY_NOISE) $(CY_OPEN_TOOL_LAUNCH) $(CY_OPEN_TOOL_ARGS) $(CY_OPEN_TOOL_NEWCFG_FLAGS) $(CY_OPEN_STDOUT) $(CY_CONFIG_JOB_CONTROL)
 else
 	$(info $(CY_NEWLINE)Launching $(notdir $(CY_OPEN_TOOL_LAUNCH)) tool on $(CY_OPEN_TOOL_FILE))
-	$(CY_NOISE) $(CY_OPEN_TOOL_LAUNCH) $(CY_OPEN_TOOL_ARGS) $(CY_OPEN_TOOL_FLAGS) $(CY_OPEN_TOOL_FILE) $(CY_OPEN_STDOUT) &
+	$(CY_NOISE) $(CY_OPEN_TOOL_LAUNCH) $(CY_OPEN_TOOL_ARGS) $(CY_OPEN_TOOL_FLAGS) $(CY_OPEN_TOOL_FILE) $(CY_OPEN_STDOUT) $(CY_CONFIG_JOB_CONTROL)
 endif
 
 modlibs:
 	$(info Launching library-manager)
-	$(CY_NOISE) $(CY_OPEN_library_manager_TOOL) $(CY_OPEN_library_manager_TOOL_FLAGS) &
+	$(CY_NOISE) $(CY_OPEN_library_manager_TOOL) $(CY_OPEN_library_manager_TOOL_FLAGS) $(CY_CONFIG_JOB_CONTROL)
 
 #
 # Identify the phony targets

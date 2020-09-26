@@ -9,7 +9,8 @@
     //    your global PATH.  Cortex-Debug needs to find the specific gdb-server
     //    you want to use.
     //
-    //       "cortex-debug.JLinkGDBServerPath": "<JLinkInstallDir>/JLinkGDBServerCL.exe"
+    //       Windows     : "cortex-debug.JLinkGDBServerPath": "<JLinkInstallDir>/JLinkGDBServerCL"
+    //       Linux / Mac : "cortex-debug.JLinkGDBServerPath": "<JLinkInstallDir>/JLinkGDBServer"
     //
     //    User settings are located in:
     //
@@ -26,7 +27,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch PSoC6 &&CY_TARGET_PROCESSOR_NAME&& (KitProg3)",
+            "name": "Launch PSoC6 &&CY_TARGET_PROCESSOR_NAME&& (KitProg3_MiniProg4)",
             "type": "cortex-debug",
             "request": "launch",
             "cwd": "${workspaceRoot}",
@@ -34,7 +35,7 @@
             "servertype": "openocd",
             "searchDir": [
                 "${workspaceRoot}",
-                "${config:modustoolbox.toolsPath}/openocd/scripts/"
+                "${config:modustoolbox.toolsPath}/&&CY_OPENOCD_SCRIPTS_DIR&&/"
             ],
             "configFiles": [
                 "openocd.tcl"
@@ -78,7 +79,8 @@
             // svdFile is optional, it can be very large.
             "svdFile": "&&CY_SVD_FILE_NAME&&",
             "runToMain": true,          // if true, program will halt at main. Not used for a restart
-            "preLaunchTask": "",        // Set this to run a task from tasks.json before starting a debug session
+            "preLaunchTask": "Build: Build [&&CY_CONFIG&&]",    // Set this to run a task from tasks.json
+                                                        // before starting a debug session
             "showDevDebugOutput": false // When set to true, displays output of GDB.
                                         // This is helpful when something is not working right
         },
@@ -86,7 +88,7 @@
         // executable matches the image in the chip exactly, or else strange things can happen
         // with breakpoints, variables, etc.
         {
-            "name": "Attach PSoC6 &&CY_TARGET_PROCESSOR_NAME&& (KitProg3)",
+            "name": "Attach PSoC6 &&CY_TARGET_PROCESSOR_NAME&& (KitProg3_MiniProg4)",
             "type": "cortex-debug",
             "request": "attach",
             "cwd": "${workspaceRoot}",
@@ -94,7 +96,7 @@
             "servertype": "openocd",
             "searchDir": [
                 "${workspaceRoot}",
-                "${config:modustoolbox.toolsPath}/openocd/scripts/"
+                "${config:modustoolbox.toolsPath}/&&CY_OPENOCD_SCRIPTS_DIR&&/"
             ],
             "openOCDPreConfigLaunchCommands": [
                 "set ENABLE_ACQUIRE 0"
@@ -127,7 +129,7 @@
                                         // This is helpful when something is not working right
         },
         {
-            "name": "Erase (KitProg3)",
+            "name": "Erase (KitProg3_MiniProg4)",
             "type": "cortex-debug",
             "request": "launch",
             "cwd": "${workspaceRoot}",
@@ -135,7 +137,7 @@
             "servertype": "openocd",
             "searchDir": [
                 "${workspaceRoot}",
-                "${config:modustoolbox.toolsPath}/openocd/scripts/"
+                "${config:modustoolbox.toolsPath}/&&CY_OPENOCD_SCRIPTS_DIR&&/"
             ],
             "openOCDPreConfigLaunchCommands": [
                 "set DISABLE_SMIF 1"
@@ -154,7 +156,7 @@
                                         // This is helpful when something is not working right
         },
         {
-            "name": "Program (KitProg3)",
+            "name": "Program (KitProg3_MiniProg4)",
             "type": "cortex-debug",
             "request": "launch",
             "cwd": "${workspaceRoot}",
@@ -162,7 +164,7 @@
             "servertype": "openocd",
             "searchDir": [
                 "${workspaceRoot}",
-                "${config:modustoolbox.toolsPath}/openocd/scripts/"
+                "${config:modustoolbox.toolsPath}/&&CY_OPENOCD_SCRIPTS_DIR&&/"
             ],
             "configFiles": [
                 "openocd.tcl"
@@ -172,14 +174,16 @@
                 "monitor program {&&CY_HEX_FILE&&}",
                 "monitor reset_config srst_only",
                 "monitor reset run",
-                "monitor psoc6.dap dpreg 0x04 0x00",
+                "monitor &&CY_OPENOCD_CHIP&&.dap dpreg 0x04 0x00",
                 "quit"
             ],
             "numberOfProcessors": 2,//PSoC6 Only//
+            "preLaunchTask": "Build: Build [&&CY_CONFIG&&]",    // Set this to run a task from tasks.json
+                                                        // before device programming
             "showDevDebugOutput": false // When set to true, displays output of GDB.
                                         // This is helpful when something is not working right
         },
-        {
+        {//JLink Start PSoC6 Only//
             "name": "Launch PSoC6 &&CY_TARGET_PROCESSOR_NAME&& (JLink)",
             "type": "cortex-debug",
             "request": "launch",
@@ -195,7 +199,7 @@
             // svdFile is optional, it can be very large.
             "svdFile": "&&CY_SVD_FILE_NAME&&",
             "runToMain": true,          // if true, program will halt at main. Not used for a restart
-            "preLaunchTask": "Build: Build [Debug]", // Set this to run a task from tasks.json before
+            "preLaunchTask": "Build: Build [&&CY_CONFIG&&]", // Set this to run a task from tasks.json before
                                                      // starting a debug session
             "showDevDebugOutput": false // When set to true, displays output of GDB.
                                         // This is helpful when something is not working right
@@ -251,8 +255,10 @@
                 "monitor go",
                 "quit"
             ],
+            "preLaunchTask": "Build: Build [&&CY_CONFIG&&]",    // Set this to run a task from tasks.json
+                                                        // before device programming
             "showDevDebugOutput": false // When set to true, displays output of GDB.
                                         // This is helpful when something is not working right
-        }
+        }//JLink End PSoC6 Only//
     ]
 }

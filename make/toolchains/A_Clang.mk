@@ -1,8 +1,8 @@
 ################################################################################
-# \file AppleClang.mk
+# \file A_Clang.mk
 #
 # \brief
-# Apple Clang toolchain configuration
+# A_Clang toolchain configuration
 #
 ################################################################################
 # \copyright
@@ -98,7 +98,16 @@ CY_TOOLCHAIN_COMMON_FLAGS=\
 #
 # CPU core specifics
 #
-ifeq ($(CORE),CM0P)
+ifeq ($(CORE),CM0)
+CY_TOOLCHAIN_FLAGS_CORE=\
+	-arch armv6m\
+	-mcpu=cortex-m0\
+	--target=arm-none-macho
+CY_TOOLCHAIN_LDFLAGS_CORE=\
+	-arch armv6m\
+	-lclang_rt.soft_static
+CY_TOOLCHAIN_VFP_FLAGS=
+else ifeq ($(CORE),CM0P)
 CY_TOOLCHAIN_FLAGS_CORE=\
 	-arch armv6m\
 	-mcpu=cortex-m0plus\
@@ -107,7 +116,7 @@ CY_TOOLCHAIN_LDFLAGS_CORE=\
 	-arch armv6m\
 	-lclang_rt.soft_static
 CY_TOOLCHAIN_VFP_FLAGS=
-else
+else ifeq ($(CORE),CM4)
 ifeq ($(VFP_SELECT),hardfp)
 CY_TOOLCHAIN_LD_VFP_FLAGS=-lclang_rt.hard_static
 CY_TOOLCHAIN_VFP_FLAGS=-mfloat-abi=hard -mfpu=fpv4-sp-d16
@@ -122,7 +131,9 @@ CY_TOOLCHAIN_FLAGS_CORE=\
 CY_TOOLCHAIN_LDFLAGS_CORE=\
 	-arch armv7em\
 	$(CY_TOOLCHAIN_LD_VFP_FLAGS)
-endif # ($(CORE),CM0P)
+else ifeq ($(CORE),CM33)
+$(call CY_MACRO_ERROR, CPU core-specific flags are not defined for the "$(CORE)" CPU)
+endif # ($(CORE),CM0)
 
 #
 # Command line flags for c-files
@@ -207,6 +218,7 @@ CY_TOOLCHAIN_SUFFIX_D=d
 CY_TOOLCHAIN_SUFFIX_LS=mk
 CY_TOOLCHAIN_SUFFIX_MAP=map
 CY_TOOLCHAIN_SUFFIX_TARGET=mach_o
+CY_TOOLCHAIN_SUFFIX_PROGRAM=hex
 CY_TOOLCHAIN_SUFFIX_ARCHIVE=a
 
 #
@@ -228,11 +240,14 @@ CY_TOOLCHAIN_EXPLICIT_DEPENDENCIES=-MMD -MP -MF "$$(subst .$(CY_TOOLCHAIN_SUFFIX
 #
 # Additional includes in the compilation process based on this
 # toolchain
+# NOTE: This includes support for the versions of GCC shipped with 2.0/2.1 and 2.2
 #
 CY_TOOLCHAIN_INCLUDES=\
 	$(CY_COMPILER_GCC_ARM_DIR)/arm-none-eabi/include\
 	$(CY_COMPILER_GCC_ARM_DIR)/lib/gcc/arm-none-eabi/7.2.1/include\
-	$(CY_COMPILER_GCC_ARM_DIR)/lib/gcc/arm-none-eabi/7.2.1/include-fixed
+	$(CY_COMPILER_GCC_ARM_DIR)/lib/gcc/arm-none-eabi/7.2.1/include-fixed\
+	$(CY_COMPILER_GCC_ARM_DIR)/lib/gcc/arm-none-eabi/9.3.1/include\
+	$(CY_COMPILER_GCC_ARM_DIR)/lib/gcc/arm-none-eabi/9.3.1/include-fixed
 
 #
 # Additional libraries in the link process based on this toolchain

@@ -26,23 +26,28 @@ ifeq ($(WHICHFILE),true)
 $(info Processing $(lastword $(MAKEFILE_LIST)))
 endif
 
-#
 # Underscored variant of TARGET
-#
 CY_TARGET_UNDERSCORE=$(subst -,_,$(TARGET))
+
+# Focused search if using SEARCH variables in mtb.mk
+ifneq ($(SEARCH_TARGET_$(TARGET)),)
+CY_TARGET_MAKEFILE_UNDERSCORE_SEARCH:=$(call CY_MACRO_SEARCH,$(CY_TARGET_UNDERSCORE).mk,$(SEARCH_TARGET_$(TARGET)))
+CY_TARGET_MAKEFILE_SEARCH:=$(call CY_MACRO_SEARCH,$(TARGET).mk,$(SEARCH_TARGET_$(TARGET)))
+CY_TARGET_AVAILABLE_SEARCH:=$(CY_TARGET_MAKEFILE_UNDERSCORE_SEARCH) $(CY_TARGET_MAKEFILE_SEARCH)
+else
 CY_TARGET_MAKEFILE_UNDERSCORE_SEARCH:=$(call CY_MACRO_SEARCH,$(CY_TARGET_UNDERSCORE).mk,$(CY_INTERNAL_APP_PATH))\
                     $(if $(CY_INTERNAL_EXTAPP_PATH),$(call CY_MACRO_SEARCH,$(CY_TARGET_UNDERSCORE).mk,$(CY_INTERNAL_EXTAPP_PATH)))\
-                    $(if $(SEARCH_LIBS_AND_INCLUDES),$(foreach d,$(SEARCH_LIBS_AND_INCLUDES),$(call CY_MACRO_SEARCH,$(CY_TARGET_UNDERSCORE).mk,$(d))))
-
-#
-# Search for target make files and BSPs. Use := assignment for better performance.
-#
+                    $(if $(SEARCH_LIBS_AND_INCLUDES),$(foreach d,$(SEARCH_LIBS_AND_INCLUDES),$(call CY_MACRO_SEARCH,$(CY_TARGET_UNDERSCORE).mk,$(d))))\
+                    $(if $(SEARCH),$(foreach d,$(SEARCH),$(call CY_MACRO_SEARCH,$(CY_TARGET_UNDERSCORE).mk,$(d))))
 CY_TARGET_MAKEFILE_SEARCH:=$(call CY_MACRO_SEARCH,$(TARGET).mk,$(CY_INTERNAL_APP_PATH))\
                     $(if $(CY_INTERNAL_EXTAPP_PATH),$(call CY_MACRO_SEARCH,$(TARGET).mk,$(CY_INTERNAL_EXTAPP_PATH)))\
-                    $(if $(SEARCH_LIBS_AND_INCLUDES),$(foreach d,$(SEARCH_LIBS_AND_INCLUDES),$(call CY_MACRO_SEARCH,$(TARGET).mk,$(d))))
+                    $(if $(SEARCH_LIBS_AND_INCLUDES),$(foreach d,$(SEARCH_LIBS_AND_INCLUDES),$(call CY_MACRO_SEARCH,$(TARGET).mk,$(d))))\
+                    $(if $(SEARCH),$(foreach d,$(SEARCH),$(call CY_MACRO_SEARCH,$(TARGET).mk,$(d))))
 CY_TARGET_AVAILABLE_SEARCH:=$(call CY_MACRO_SEARCH,.mk,$(CY_INTERNAL_APP_PATH))\
                     $(if $(CY_INTERNAL_EXTAPP_PATH),$(call CY_MACRO_SEARCH,.mk,$(CY_INTERNAL_EXTAPP_PATH)))\
                     $(if $(SEARCH_LIBS_AND_INCLUDES),$(foreach d,$(SEARCH_LIBS_AND_INCLUDES),$(call CY_MACRO_SEARCH,.mk,$(d))))\
+                    $(if $(SEARCH),$(foreach d,$(SEARCH),$(call CY_MACRO_SEARCH,.mk,$(d))))
+endif
 
 # Gather and filter the found files
 CY_SEARCH_PRUNED_MAKE_FILES:=$(filter-out $(foreach d,$(CY_IGNORE_DIRS),$(filter $(d)%,$(CY_TARGET_MAKEFILE_SEARCH) $(CY_TARGET_MAKEFILE_UNDERSCORE_SEARCH))),\
@@ -69,6 +74,7 @@ ifneq ($(CY_TARGET_EXTRA_FILTERED),)
 $(call CY_MACRO_ERROR,Found multiple identical targets: $(CY_TARGET_EXTRA_INCLUDES) $(CY_TARGET_EXTRA_FILTERED))
 else
 CY_TARGET_DIR=$(call CY_MACRO_DIR,$(CY_TARGET_EXTRA_INCLUDES))
+$(info $(TARGET).mk: $(CY_TARGET_EXTRA_INCLUDES))
 endif
 
 else
@@ -77,8 +83,9 @@ ifeq ($(words $(CY_TARGET_MAKEFILE)),0)
 $(info Available target(s): $(CY_TARGET_AVAILABLE))
 $(call CY_MACRO_ERROR,Target "$(TARGET)" not found)
 else ifeq ($(words $(CY_TARGET_MAKEFILE)),1)
-CY_TARGET_DIR=$(call CY_MACRO_DIR,$(CY_TARGET_MAKEFILE)$(CY_TARGET_MAKEFILE_SEARCH_LIBS))
-include $(CY_TARGET_MAKEFILE) $(CY_TARGET_MAKEFILE_SEARCH_LIBS)  
+CY_TARGET_DIR=$(call CY_MACRO_DIR,$(CY_TARGET_MAKEFILE))
+include $(CY_TARGET_MAKEFILE)
+$(info $(TARGET).mk: $(CY_TARGET_MAKEFILE))
 else
 $(call CY_MACRO_ERROR,Found multiple identical targets:$(CY_TARGET_MAKEFILE))
 endif

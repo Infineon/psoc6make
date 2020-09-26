@@ -4,64 +4,6 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Utility: getlibs",
-            "type": "shell",
-            "windows" : {
-                "command": "${config:modustoolbox.toolsPath}/modus-shell/bin/bash.exe" ,
-                "args": [
-                    "--norc",
-                    "-c",
-                    "export PATH=/bin:/usr/bin:$PATH ; ${config:modustoolbox.toolsPath}/modus-shell/bin/make.exe getlibs"
-                ]
-            },
-            "linux" : {
-                "command": "bash",
-                "args": [
-                    "--norc",
-                    "-c",
-                    "make getlibs"
-                ]
-            },
-            "osx" : {
-                "command": "bash",
-                "args": [
-                    "--norc",
-                    "-c",
-                    "make getlibs"
-                ]
-            },            
-            "problemMatcher": []
-        },
-        {
-            "label": "Utility: refresh",
-            "type": "shell",
-            "windows" : {
-                "command": "${config:modustoolbox.toolsPath}/modus-shell/bin/bash.exe" ,
-                "args": [
-                    "--norc",
-                    "-c",
-                    "export PATH=/bin:/usr/bin:$PATH ; ${config:modustoolbox.toolsPath}/modus-shell/bin/make.exe vscode"
-                ]
-            },
-            "linux" : {
-                "command": "bash",
-                "args": [
-                    "--norc",
-                    "-c",
-                    "make vscode"
-                ]
-            },
-            "osx" : {
-                "command": "bash",
-                "args": [
-                    "--norc",
-                    "-c",
-                    "make vscode"
-                ]
-            },            
-            "problemMatcher": []
-        },        
-        {
             "label": "Build: Build [Debug]",
             "type": "shell",
 
@@ -88,7 +30,7 @@
                     "-c",
                     "make -j CONFIG=Debug build"
                 ]
-            },             
+            },
             "problemMatcher": "$gcc",
             "group": {
                 "kind": "build",
@@ -122,13 +64,13 @@
                     "-c",
                     "make -j CONFIG=Debug clean ; make -j CONFIG=Debug build"
                 ]
-            },             
+            },
             "problemMatcher": "$gcc",
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
-        },        
+        },
         {
             "label": "Build: Clean [Debug]",
             "type": "shell",
@@ -156,13 +98,13 @@
                     "-c",
                     "make -j CONFIG=Debug clean"
                 ]
-            },             
+            },
             "problemMatcher": "$gcc",
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
-        },        
+        },
         {
             "label": "Build: Build [Release]",
             "type": "shell",
@@ -189,12 +131,12 @@
                     "-c",
                     "make -j CONFIG=Release build"
                 ]
-            },              
+            },
             "problemMatcher": "$gcc",
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }            
+            }
         },
         {
             "label": "Build: Clean and Rebuild [Release]",
@@ -222,13 +164,13 @@
                     "-c",
                     "make -j CONFIG=Release clean ; make -j CONFIG=Release build"
                 ]
-            },              
+            },
             "problemMatcher": "$gcc",
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }            
-        },        
+            }
+        },
         {
             "label": "Build: Clean [Release]",
             "type": "shell",
@@ -255,22 +197,22 @@
                     "-c",
                     "make -j CONFIG=Release clean"
                 ]
-            },              
+            },
             "problemMatcher": "$gcc",
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }            
-        },        
+            }
+        },
         {
-            "label": "Tool: device-configurator",
+            "label": "Tool: Library Manager",
             "type": "shell",
             "windows" : {
                 "command": "${config:modustoolbox.toolsPath}/modus-shell/bin/bash.exe" ,
                 "args": [
                     "--norc",
                     "-c",
-                    "export PATH=/bin:/usr/bin:$PATH ; ${config:modustoolbox.toolsPath}/modus-shell/bin/make.exe config"
+                    "export PATH=/bin:/usr/bin:$PATH ; ${config:modustoolbox.toolsPath}/modus-shell/bin/make.exe modlibs CY_CONFIG_JOB_CONTROL="
                 ]
             },
             "linux" : {
@@ -278,7 +220,7 @@
                 "args": [
                     "--norc",
                     "-c",
-                    "make config"
+                    "make modlibs CY_CONFIG_JOB_CONTROL="
                 ]
             },
             "osx" : {
@@ -286,36 +228,10 @@
                 "args": [
                     "--norc",
                     "-c",
-                    "make config"
+                    "make modlibs CY_CONFIG_JOB_CONTROL="
                 ]
-            },              
+            },
             "problemMatcher": "$gcc"
-        },
-        {
-            "label": "Tool: library-manager",
-            "type": "shell",
-            "windows" : {
-                "command": "${config:modustoolbox.toolsPath}/library-manager/library-manager.exe",
-                "args" : [
-                    "-d",
-                    "${workspaceRoot}"
-                ]                
-            },
-            "linux" : {
-                "command": "${config:modustoolbox.toolsPath}/library-manager/library-manager",
-                "args" : [
-                    "-d",
-                    "${workspaceRoot}"
-                ]                
-            },
-            "osx" : {
-                "command": "${config:modustoolbox.toolsPath}/library-manager/library-manager -d  ${workspaceRoot}",
-                "args" : [
-                    "-d",
-                    "${workspaceRoot}"
-                ]
-            },              
-            "problemMatcher": "$gcc"      
-        }                
+        }
     ]
 }

@@ -12,5 +12,5 @@
     //mtb//
     "modustoolbox.toolsPath": "&&CY_MTB_PATH&&",
     "cortex-debug.armToolchainPath": "&&CY_GCC_BIN_DIR&&",
-    "cortex-debug.openocdPath": "${config:modustoolbox.toolsPath}/openocd/bin/openocd"
+    "cortex-debug.openocdPath": "${config:modustoolbox.toolsPath}/&&CY_OPENOCD_EXE_DIR&&"
 }

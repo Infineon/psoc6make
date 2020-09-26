@@ -38,16 +38,16 @@ endif
 #
 define CY_MACRO_SHAREDLIB_DEPENDENCIES
 
-$(1)_SED_PATTERN=$(subst /,\/,$(subst .,\.,$(2)))
+$(1)_SED_PATTERN=$(subst /,\/,$(subst .,\.,$(2)))\/
 ifeq ($(CY_BUILD_LOC),$(CY_APP_LOCATION)/build)
 $(1)_SHAREDLIB_BUILD_LOCATION?=$(2)/build/$(TARGET)/$(CONFIG)
 else
-$(1)_SHAREDLIB_BUILD_LOCATION?=$(CY_INTERNAL_BUILD_LOCATION)/$(1)/$(TARGET)/$(CONFIG)
+$(1)_SHAREDLIB_BUILD_LOCATION?=$(CY_PREBUILD_BUILD_LOC)/$(1)/$(TARGET)/$(CONFIG)
 endif
 
 # Dependencies
-$$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist.rsp: shared_libs 
-$$($(1)_SHAREDLIB_BUILD_LOCATION)/liblist.rsp: shared_libs 
+$$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist.rsp: shared_libs
+$$($(1)_SHAREDLIB_BUILD_LOCATION)/liblist.rsp: shared_libs
 $$($(1)_SHAREDLIB_BUILD_LOCATION)/artifact.rsp: shared_libs
 $(1)_shared_lib: | $$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist.rsp
 $(1)_shared_lib: | $$($(1)_SHAREDLIB_BUILD_LOCATION)/liblist.rsp
@@ -57,7 +57,7 @@ $(1)_shared_lib:
 	$(CY_NOISE)touch $$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist.rsp \
 	$$($(1)_SHAREDLIB_BUILD_LOCATION)/liblist.rsp \
 	$$($(1)_SHAREDLIB_BUILD_LOCATION)/artifact.rsp; \
-	inclist_read=$$$$(cat $$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist.rsp | sed -e "s/I\.\//I$$($(1)_SED_PATTERN)\//g" | tr " " "\n"); \
+	inclist_read=$$$$(cat $$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist.rsp | sed -e "s/^-I/-I$$($(1)_SED_PATTERN)/g" | tr " " "\n"); \
 	if [ -f "$$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist_export.rsp" ]; then \
 		inclist_export_read=$$$$(cat $$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist_export.rsp | tr " " "\n"); \
 		if [[ "$$$$inclist_read" != "$$$$inclist_export_read" ]]; then \
@@ -66,7 +66,7 @@ $(1)_shared_lib:
 	else \
 		echo "$$$$inclist_read" > $$($(1)_SHAREDLIB_BUILD_LOCATION)/inclist_export.rsp ;\
 	fi;\
-	liblist_read=$$$$(cat $$($(1)_SHAREDLIB_BUILD_LOCATION)/liblist.rsp | sed -e "s/\.\//$$($(1)_SED_PATTERN)\//g" | tr " " "\n"); \
+	liblist_read=$$$$(cat $$($(1)_SHAREDLIB_BUILD_LOCATION)/liblist.rsp | sed -e "s/^/$$($(1)_SED_PATTERN)/g" | tr " " "\n"); \
 	if [ -f "$$($(1)_SHAREDLIB_BUILD_LOCATION)/liblist_export.rsp" ]; then \
 		liblist_export_read=$$$$(cat $$($(1)_SHAREDLIB_BUILD_LOCATION)/liblist_export.rsp | tr " " "\n"); \
 		if [[ "$$$$liblist_read" != "$$$$liblist_export_read" ]]; then \
@@ -98,14 +98,14 @@ $(1)_SED_PATTERN=$(subst /,\/,$(subst .,\.,$(2)))
 ifeq ($(CY_BUILD_LOC),$(CY_APP_LOCATION)/build)
 $(1)_DEPAPP_BUILD_LOCATION?=$(2)/build/$(TARGET)/$(CONFIG)
 else
-$(1)_DEPAPP_BUILD_LOCATION?=$(CY_INTERNAL_BUILD_LOCATION)/$(1)/$(TARGET)/$(CONFIG)
+$(1)_DEPAPP_BUILD_LOCATION?=$(CY_PREBUILD_BUILD_LOC)/$(1)/$(TARGET)/$(CONFIG)
 endif
 
-# Dependencies 
+# Dependencies
 $$($(1)_DEPAPP_BUILD_LOCATION)/artifact.rsp: $(1)_dependent_app
 $(1)_dependent_postbuild: | $$($(1)_DEPAPP_BUILD_LOCATION)/artifact.rsp
 
-$(1)_dependent_app: | dependent_apps_preprint 
+$(1)_dependent_app: | dependent_apps_preprint
 	$$(info )
 	$$(info ==============================================================================)
 	$$(info = Dependent app $(1) =)
@@ -114,19 +114,16 @@ $(1)_dependent_app: | dependent_apps_preprint
 ifneq ($(CY_DEPAPP_CLEAN),1)
 	$(CY_NOISE)touch $$($(1)_DEPAPP_BUILD_LOCATION)/artifact.rsp; \
 	artifact_elf=$$$$(sed '1s;^;$$($(1)_DEPAPP_BUILD_LOCATION)/;' $$($(1)_DEPAPP_BUILD_LOCATION)/artifact.rsp); \
-	artifact_bare=$$$${artifact_elf%.elf}; \
+	artifact_bare=$$$${artifact_elf%.$(CY_TOOLCHAIN_SUFFIX_TARGET)}; \
 	artifact_bin=$$$$artifact_bare.bin; \
 	artifact_c=$$$$artifact_bare.c; \
 	artifact_name=$$$${artifact_bare##*/}; \
-	if [[ "$$$$artifact_elf" == *.elf ]]; then \
+	if [[ "$$$$artifact_elf" == *.$(CY_TOOLCHAIN_SUFFIX_TARGET) ]]; then \
 		if [[ "$$$$artifact_elf" -nt "$(CY_PREBUILD_TARGET)" ]] || [[ ! -f "$$$$artifact_bin" ]] || [[ ! -f "$$$$artifact_elf" ]] || [[ ! -f "$$$$artifact_c" ]]; then\
 			$(call CY_MACRO_ELF2BIN,"$$$$artifact_elf","$$$$artifact_bin");\
-			$(CY_INTERNAL_BASELIB_PATH)/make/scripts/bin2c.pl "$$$$artifact_name" "$$$$artifact_bin" > "$$$$artifact_c"; \
+			$(CY_BASELIB_CORE_PATH)/make/scripts/bin2c.pl "$$$$artifact_name" "$$$$artifact_bin" > "$$$$artifact_c"; \
 			echo "$$$$artifact_c" > $$($(1)_DEPAPP_BUILD_LOCATION)/artifact_export.rsp;\
 		fi; \
-	else \
-		echo "Could not locate artifact .elf. Verify that this app has APPNAME variable set instead of LIBNAME."; \
-		exit 1; \
 	fi;
 endif
 	$(CY_NOISE)echo ==============================================================================
@@ -140,7 +137,6 @@ endef
 
 # Define application target
 CY_PREBUILD_TARGET=$(CY_CONFIG_DIR)/$(APPNAME).$(CY_TOOLCHAIN_SUFFIX_TARGET)
-
 
 ################################################################################
 # Shared libs post-processing
@@ -178,9 +174,9 @@ CY_DEPAPP_MAKECMDGOALS=$(strip $(subst program,build,\
 
 # Construct the make command (arguments are necessary for locating the build output directory)
 ifeq ($(CY_DEPAPP_MAKECMDGOALS),)
-CY_DEPAPP_MAKECMD=echo Nothing to be done for 
+CY_DEPAPP_MAKECMD=echo Nothing to be done for
 else
-CY_DEPAPP_MAKECMD=$(MAKE) $(CY_DEPAPP_MAKECMDGOALS) TOOLCHAIN=$(TOOLCHAIN) TARGET=$(TARGET) CONFIG=$(CONFIG) --no-print-directory -C
+CY_DEPAPP_MAKECMD=+ $(MAKE) $(CY_DEPAPP_MAKECMDGOALS) TOOLCHAIN=$(TOOLCHAIN) TARGET=$(TARGET) CONFIG=$(CONFIG) --no-print-directory -C
 endif
 
 # Construct dependent app targets for post-processing
@@ -205,6 +201,19 @@ endif
 
 
 ################################################################################
+# Configurators
+################################################################################
+
+# Add the dependency to configurator code generation ("override CY_PREBUILD_GEN_CONFIG=" to manually skip)
+CY_PREBUILD_GEN_CONFIG_LIST=all build qbuild program debug
+ifneq ($(filter $(CY_PREBUILD_GEN_CONFIG_LIST),$(MAKECMDGOALS)),)
+CY_PREBUILD_GEN_CONFIG=gen_config
+# Note: configurators cannot be run in parallel. Therefore linearize using dependencies
+$(CY_CONFIG_MODUS_FILE) $(CY_CONFIG_CYBT_FILE) $(CY_CONFIG_CYUSBDEV_FILE) : shared_libs $(CY_SHAREDLIB_LIST) dependent_apps
+endif
+
+
+################################################################################
 # Targets
 ################################################################################
 
@@ -213,19 +222,14 @@ endif
 #
 prebuild: CY_PREBUILD_postprint
 
-CY_PREBUILD_dependencies: shared_libs $(CY_SHAREDLIB_LIST) dependent_apps gen_config
-
-#
-# Prebuild preprint
-#
-CY_PREBUILD_preprint:
-	$(CY_NOISE)echo
+CY_PREBUILD_dependencies: shared_libs $(CY_SHAREDLIB_LIST) dependent_apps $(CY_PREBUILD_GEN_CONFIG)
 
 #
 # Create the output directory in case prebuilds require it
 #
-CY_PREBUILD_mkdirs: CY_PREBUILD_preprint CY_PREBUILD_dependencies
-	$(CY_NOISE)mkdir -p $(CY_CONFIG_DIR) $(CY_CMD_TERM)
+CY_PREBUILD_mkdirs: CY_PREBUILD_dependencies
+	$(CY_NOISE)echo; \
+	mkdir -p $(CY_CONFIG_DIR) $(CY_CMD_TERM)
 
 #
 # Run BSP prebuild step
@@ -255,5 +259,5 @@ CY_PREBUILD_postprint: CY_PREBUILD_prebuild
 # Indicate all phony targets that should be built regardless
 #
 .PHONY: prebuild gen_config $(CY_SHAREDLIB_LIST) shared_libs $(CY_DEPAPP_LIST) dependent_apps
-.PHONY: CY_PREBUILD_dependencies CY_PREBUILD_preprint CY_PREBUILD_mkdirs CY_PREBUILD_postprint
+.PHONY: CY_PREBUILD_dependencies CY_PREBUILD_mkdirs CY_PREBUILD_postprint
 .PHONY: CY_PREBUILD_prebuild CY_PREBUILD_app_prebuild CY_PREBUILD_bsp_prebuild
